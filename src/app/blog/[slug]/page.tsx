@@ -9,9 +9,14 @@ import { Calendar, Eye, Clock, ArrowLeft, BookOpen, User } from 'lucide-react';
 export const revalidate = 60;
 
 export default async function BlogDetailPage({ params }: { params: { slug: string } }) {
-  const post = await prisma.blogPost.findUnique({
-    where: { slug: params.slug },
-  });
+  let post = null;
+  try {
+    post = await prisma.blogPost.findUnique({
+      where: { slug: params.slug },
+    });
+  } catch (err) {
+    console.error("Database error during post fetch:", err);
+  }
 
   if (!post || !post.isPublished) {
     notFound();

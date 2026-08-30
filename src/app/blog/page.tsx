@@ -7,10 +7,15 @@ import { BookOpen, Calendar, Eye, Clock, ArrowRight, Sparkles } from 'lucide-rea
 export const revalidate = 60;
 
 export default async function BlogListingPage() {
-  const posts = await prisma.blogPost.findMany({
-    where: { isPublished: true },
-    orderBy: { createdAt: 'desc' },
-  });
+  let posts: any[] = [];
+  try {
+    posts = await prisma.blogPost.findMany({
+      where: { isPublished: true },
+      orderBy: { createdAt: 'desc' },
+    });
+  } catch (err) {
+    console.error("Database error during blog fetch:", err);
+  }
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 pb-16">

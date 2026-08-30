@@ -8,8 +8,12 @@ import ExpertiseGrid from '@/components/about/ExpertiseGrid';
 export const revalidate = 60;
 
 export default async function AboutPage() {
-  // 1. Query Profile from MySQL
-  const profileRecord = await prisma.teacherProfile.findFirst();
+  let profileRecord = null;
+  try {
+    profileRecord = await prisma.teacherProfile.findFirst();
+  } catch (err) {
+    console.error("Database connection warning during build/render:", err);
+  }
 
   const profile = profileRecord || {
     fullName: 'Prof. Ashwini Sawant',

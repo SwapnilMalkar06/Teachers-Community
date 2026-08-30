@@ -9,8 +9,36 @@ import ResearchTeaser from '@/components/home/ResearchTeaser';
 export const revalidate = 60; // revalidate at most every 60 seconds
 
 export default async function HomePage() {
-  // 1. Fetch Teacher Profile from MySQL
-  const profileRecord = await prisma.teacherProfile.findFirst();
+  let profileRecord = null;
+  let subjectsCount = 0;
+  let publicationsCount = 0;
+  let subjects: any[] = [];
+  let publications: any[] = [];
+
+  try {
+    profileRecord = await prisma.teacherProfile.findFirst();
+    subjectsCount = await prisma.subject.count();
+    publicationsCount = await prisma.researchPublication.count();
+    subjects = await prisma.subject.findMany({
+      take: 3,
+      include: {
+        _count: {
+          select: {
+            resources: true,
+            videos: true,
+          },
+        },
+      },
+    });
+    publications = await prisma.researchPublication.findMany({
+      take: 3,
+      orderBy: {
+        year: 'desc',
+      },
+    });
+  } catch (err) {
+    console.error("Database connection warning during build/render:", err);
+  }
   
   const profile = profileRecord || {
     fullName: 'Prof. Ashwini Sawant',
@@ -28,37 +56,12 @@ export default async function HomePage() {
     orcidUrl: 'https://orcid.org',
   };
 
-  // 2. Fetch Stats Metrics
-  const subjectsCount = await prisma.subject.count();
-  const publicationsCount = await prisma.researchPublication.count();
-  
   const stats = {
     yearsExperience: 12,
     publicationsCount: publicationsCount > 0 ? publicationsCount : 25,
     subjectsCount: subjectsCount > 0 ? subjectsCount : 5,
     studentsMentored: 500,
   };
-
-  // 3. Fetch Featured Subjects
-  const subjects = await prisma.subject.findMany({
-    take: 3,
-    include: {
-      _count: {
-        select: {
-          resources: true,
-          videos: true,
-        },
-      },
-    },
-  });
-
-  // 4. Fetch Recent Publications
-  const publications = await prisma.researchPublication.findMany({
-    take: 3,
-    orderBy: {
-      year: 'desc',
-    },
-  });
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col">
