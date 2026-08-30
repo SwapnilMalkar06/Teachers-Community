@@ -1,0 +1,177 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model TeacherProfile {
+  id               String   @id @default(uuid())
+  fullName         String   @default("Prof. Ashwini Sawant")
+  designation      String   @default("Assistant Professor")
+  department       String   @default("Computer Engineering")
+  institution      String   @default("Engineering Institute")
+  heroTitle        String   @default("Educator, Researcher & Mentor")
+  heroSubtitle     String   @db.Text
+  profileImageUrl  String   @default("/images/profile.jpg")
+  bioText          String   @db.Text
+  phdSummary       String?  @db.Text
+  officeAddress    String?
+  contactEmail     String   @default("ashwini.sawant@example.com")
+  contactPhone     String?
+  googleScholarUrl String?
+  linkedInUrl      String?
+  researchGateUrl  String?
+  orcidUrl         String?
+  updatedAt        DateTime @updatedAt
+}
+
+model Subject {
+  id          String             @id @default(uuid())
+  code        String             @unique
+  name        String
+  department  String
+  semester    String
+  description String?            @db.Text
+  resources   TeachingResource[]
+  videos      VideoLecture[]
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+}
+
+enum ResourceType {
+  NOTES
+  PPT
+  QUESTION_BANK
+}
+
+model TeachingResource {
+  id           String       @id @default(uuid())
+  subjectId    String
+  subject      Subject      @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  title        String
+  description  String?      @db.Text
+  resourceType ResourceType @default(NOTES)
+  fileUrl      String
+  fileType     String       @default("pdf")
+  uploadedAt   DateTime     @default(now())
+}
+
+model VideoLecture {
+  id          String   @id @default(uuid())
+  subjectId   String
+  subject     Subject  @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  title       String
+  youtubeUrl  String
+  youtubeId   String?
+  description String?  @db.Text
+  createdAt   DateTime @default(now())
+}
+
+enum PublicationCategory {
+  PHD_THESIS
+  JOURNAL_PUBLICATION
+  CONFERENCE_PAPER
+}
+
+model ResearchPublication {
+  id                  String              @id @default(uuid())
+  title               String
+  authors             String
+  journalOrConference String
+  year                Int
+  doi                 String?
+  category            PublicationCategory @default(JOURNAL_PUBLICATION)
+  pdfUrl              String?
+  publisher           String?
+  createdAt           DateTime            @default(now())
+}
+
+enum EventRole {
+  ATTENDED
+  ORGANIZED
+  RESOURCE_PERSON
+}
+
+enum EventType {
+  FDP
+  WORKSHOP
+  SEMINAR
+  STTP
+}
+
+model WorkshopFDP {
+  id             String    @id @default(uuid())
+  title          String
+  type           EventType @default(FDP)
+  role           EventRole @default(ATTENDED)
+  venue          String
+  startDate      DateTime
+  endDate        DateTime?
+  description    String?   @db.Text
+  certificateUrl String?
+  createdAt      DateTime  @default(now())
+}
+
+model Certificate {
+  id                  String    @id @default(uuid())
+  title               String
+  issuingOrganization String
+  issueDate           DateTime
+  credentialId        String?
+  credentialUrl       String?
+  imageUrl            String?
+  createdAt           DateTime  @default(now())
+}
+
+enum ActivityCategory {
+  ACADEMIC
+  EXTRACURRICULAR
+  COMMITTEE
+  OTHER
+}
+
+model Activity {
+  id          String           @id @default(uuid())
+  title       String
+  category    ActivityCategory @default(ACADEMIC)
+  eventDate   DateTime
+  description String?          @db.Text
+  imageUrl    String?
+  createdAt   DateTime         @default(now())
+}
+
+model BlogPost {
+  id                      String   @id @default(uuid())
+  title                   String
+  slug                    String   @unique
+  content                 String   @db.Text
+  summary                 String   @db.Text
+  coverImage              String?
+  isPublished             Boolean  @default(true)
+  viewCount               Int      @default(0)
+  estimatedReadingMinutes Int      @default(3)
+  totalEngagementSeconds  Int      @default(0)
+  createdAt               DateTime @default(now())
+  updatedAt               DateTime @updatedAt
+}
+
+model GalleryItem {
+  id        String   @id @default(uuid())
+  title     String
+  category  String   @default("Academic Events")
+  imageUrl  String
+  eventDate DateTime @default(now())
+}
+
+model ContactMessage {
+  id         String   @id @default(uuid())
+  name       String
+  email      String
+  subject    String
+  message    String   @db.Text
+  receivedAt DateTime @default(now())
+  isRead     Boolean  @default(false)
+}
