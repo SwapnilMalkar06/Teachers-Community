@@ -6,7 +6,7 @@ import { prisma } from '@/lib/prisma';
 import EngagementTracker from '@/components/blog/EngagementTracker';
 import { Calendar, Eye, Clock, ArrowLeft, BookOpen, User } from 'lucide-react';
 
-export const revalidate = 60;
+export const dynamic = 'force-dynamic';
 
 export default async function BlogDetailPage({ params }: { params: { slug: string } }) {
   let post = null;

@@ -5,7 +5,7 @@ import EducationTimeline from '@/components/about/EducationTimeline';
 import ExperienceTimeline from '@/components/about/ExperienceTimeline';
 import ExpertiseGrid from '@/components/about/ExpertiseGrid';
 
-export const revalidate = 60;
+export const dynamic = 'force-dynamic';
 
 export default async function AboutPage() {
   let profileRecord = null;

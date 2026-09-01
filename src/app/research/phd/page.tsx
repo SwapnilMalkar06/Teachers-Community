@@ -2,10 +2,16 @@ import React from 'react';
 import { Award, UserCheck, Building, Download, CheckCircle2, BookOpen } from 'lucide-react';
 import { prisma } from '@/lib/prisma';
 
-export const revalidate = 60;
+export const dynamic = 'force-dynamic';
 
 export default async function PhDPage() {
-  const profile = await prisma.teacherProfile.findFirst();
+  let profile = null;
+
+  try {
+    profile = await prisma.teacherProfile.findFirst();
+  } catch (err) {
+    console.error('Database query fallback for PhD page:', err);
+  }
 
   const phd = {
     title: 'Machine Learning-Driven Dynamic Resource Allocation & Load Balancing in Distributed Cloud Frameworks',

@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { prisma } from '@/lib/prisma';
 import { BookOpen, FileText, Presentation, Video, HelpCircle } from 'lucide-react';
 
-export const revalidate = 60;
+export const dynamic = 'force-dynamic';
 
 export default async function SubjectsPage() {
   let subjects: any[] = [];

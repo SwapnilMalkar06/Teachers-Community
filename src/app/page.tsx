@@ -6,7 +6,7 @@ import StatsCounter from '@/components/home/StatsCounter';
 import TeachingTeaser from '@/components/home/TeachingTeaser';
 import ResearchTeaser from '@/components/home/ResearchTeaser';
 
-export const revalidate = 60; // revalidate at most every 60 seconds
+export const dynamic = 'force-dynamic';
 
 export default async function HomePage() {
   let profileRecord = null;

@@ -4,7 +4,7 @@ import Image from 'next/image';
 import { prisma } from '@/lib/prisma';
 import { BookOpen, Calendar, Eye, Clock, ArrowRight, Sparkles } from 'lucide-react';
 
-export const revalidate = 60;
+export const dynamic = 'force-dynamic';
 
 export default async function BlogListingPage() {
   let posts: any[] = [];
