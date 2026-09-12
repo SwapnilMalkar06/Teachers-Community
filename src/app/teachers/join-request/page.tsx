@@ -2,12 +2,13 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { UserPlus, Mail, User, Building, BookOpen, AlertCircle, CheckCircle, ArrowLeft, Send } from 'lucide-react';
+import { UserPlus, Mail, User, Building, BookOpen, AlertCircle, CheckCircle, ArrowLeft, Send, Phone } from 'lucide-react';
 
 export default function TeacherJoinRequestPage() {
   const [form, setForm] = useState({
     name: '',
     email: '',
+    phone: '',
     university: '',
     department: '',
     designation: 'Assistant Professor',
@@ -35,10 +36,11 @@ export default function TeacherJoinRequestPage() {
       const data = await res.json();
 
       if (data.success) {
-        setSuccess('Your teacher profile creation request has been submitted to the Admin! You will be notified once approved.');
+        setSuccess('Your teacher profile creation request has been submitted to the Admin! Once approved, an SMS OTP will be dispatched to your mobile number for first-time password setup.');
         setForm({
           name: '',
           email: '',
+          phone: '',
           university: '',
           department: '',
           designation: 'Assistant Professor',
@@ -76,7 +78,7 @@ export default function TeacherJoinRequestPage() {
               Request Teacher Account
             </h1>
             <p className="text-xs text-slate-400">
-              Submit your university faculty details to the platform Admin to create and manage your profile, notes, and PPTs.
+              Submit your university faculty details to the platform Admin. Upon approval, an automatic 6-digit SMS OTP will be dispatched to set your password.
             </p>
           </div>
 
@@ -110,18 +112,35 @@ export default function TeacherJoinRequestPage() {
               </div>
             </div>
 
-            <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1">Official / Academic Email *</label>
-              <div className="relative">
-                <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-                <input
-                  type="email"
-                  required
-                  placeholder="prof.name@university.edu"
-                  value={form.email}
-                  onChange={(e) => setForm({ ...form, email: e.target.value })}
-                  className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs font-medium text-white focus:ring-2 focus:ring-sky-500"
-                />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-semibold text-slate-300 mb-1">Official / Academic Email *</label>
+                <div className="relative">
+                  <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                  <input
+                    type="email"
+                    required
+                    placeholder="prof.name@university.edu"
+                    value={form.email}
+                    onChange={(e) => setForm({ ...form, email: e.target.value })}
+                    className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs font-medium text-white focus:ring-2 focus:ring-sky-500"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-300 mb-1">Mobile Phone (For SMS OTP) *</label>
+                <div className="relative">
+                  <Phone className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                  <input
+                    type="tel"
+                    required
+                    placeholder="+91 98765 43210"
+                    value={form.phone}
+                    onChange={(e) => setForm({ ...form, phone: e.target.value })}
+                    className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs font-medium text-white focus:ring-2 focus:ring-sky-500"
+                  />
+                </div>
               </div>
             </div>
 

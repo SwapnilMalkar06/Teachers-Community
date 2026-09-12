@@ -365,16 +365,25 @@ function LoginContent() {
       )}
 
       {activeTab === 'TEACHER' && (
-        <div className="pt-2 text-center text-xs text-slate-400 border-t border-slate-700/60">
-          <span>
-            New university teacher?{' '}
+        <div className="pt-2 text-center text-xs text-slate-400 border-t border-slate-700/60 space-y-1.5">
+          <div>
+            <span>Approved Teacher? </span>
+            <Link
+              href="/login/otp"
+              className="text-amber-400 hover:underline font-semibold"
+            >
+              Verify SMS OTP & Set Password
+            </Link>
+          </div>
+          <div>
+            <span>New university teacher? </span>
             <Link
               href="/teachers/join-request"
               className="text-sky-400 hover:underline font-semibold"
             >
               Send Request to Admin to Create Profile
             </Link>
-          </span>
+          </div>
         </div>
       )}
 

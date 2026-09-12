@@ -23,9 +23,13 @@ enum RequestStatus {
 model User {
   id             String          @id @default(uuid())
   email          String          @unique
+  phone          String?
   password       String
   name           String
   role           Role            @default(STUDENT)
+  otp            String?
+  otpExpiresAt   DateTime?
+  isFirstLogin   Boolean         @default(true)
   createdAt      DateTime        @default(now())
   updatedAt      DateTime        @updatedAt
   teacherProfile TeacherProfile?
@@ -76,16 +80,19 @@ model TeacherProfile {
 }
 
 model TeacherRequest {
-  id          String        @id @default(uuid())
-  name        String
-  email       String
-  university  String
-  department  String
-  designation String
-  expertise   String
-  note        String?       @db.Text
-  status      RequestStatus @default(PENDING)
-  createdAt   DateTime      @default(now())
+  id           String        @id @default(uuid())
+  name         String
+  email        String
+  phone        String?
+  university   String
+  department   String
+  designation  String
+  expertise    String
+  note         String?       @db.Text
+  otp          String?
+  otpExpiresAt DateTime?
+  status       RequestStatus @default(PENDING)
+  createdAt    DateTime      @default(now())
 }
 
 model Subject {

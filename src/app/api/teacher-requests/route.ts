@@ -4,16 +4,15 @@ import { verifyUserRole } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
 
-// Submit Teacher Profile Request
+// Submit Teacher Profile Request (with Phone number for SMS OTP)
 export async function POST(request: NextRequest) {
   try {
-    const { name, email, university, department, designation, expertise, note } = await request.json();
+    const { name, email, phone, university, department, designation, expertise, note } = await request.json();
 
     if (!name || !email || !university || !expertise) {
       return NextResponse.json({ success: false, error: 'Name, Email, University, and Expertise areas are required.' }, { status: 400 });
     }
 
-    // Check if account already exists
     const existingUser = await prisma.user.findUnique({
       where: { email: email.toLowerCase().trim() },
     });
@@ -26,6 +25,7 @@ export async function POST(request: NextRequest) {
       data: {
         name,
         email: email.toLowerCase().trim(),
+        phone: phone || '+91 98765 43210',
         university,
         department: department || 'Computer Science',
         designation: designation || 'Assistant Professor',
@@ -36,7 +36,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      message: 'Teacher profile request submitted successfully! Admin will review and approve your account.',
+      message: 'Teacher profile request submitted successfully! Admin will review and send SMS OTP upon approval.',
       request: teacherRequest,
     });
   } catch (error) {

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { verifyUserRole } from '@/lib/auth';
+import { generate6DigitOTP, sendSMSOTP } from '@/lib/sms';
 
 export const dynamic = 'force-dynamic';
 
@@ -11,7 +12,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { requestId, action } = await request.json();
+    const { requestId, action } = await request.json(); // action = 'APPROVE' | 'REJECT'
 
     if (!requestId) {
       return NextResponse.json({ success: false, error: 'Request ID required' }, { status: 400 });
@@ -34,8 +35,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: true, message: 'Teacher request declined.' });
     }
 
-    // Approve: Create User & TeacherProfile
-    const defaultPassword = 'teacher123';
+    // Generate 6-Digit OTP valid for 15 minutes
+    const otp = generate6DigitOTP();
+    const otpExpiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 mins
+    const phone = reqItem.phone || '+91 98765 43210';
+    const tempPassword = `TEMP_${otp}`;
 
     let userRecord: any = await prisma.user.findUnique({
       where: { email: reqItem.email },
@@ -47,8 +51,12 @@ export async function POST(request: NextRequest) {
         data: {
           name: reqItem.name,
           email: reqItem.email,
-          password: defaultPassword,
+          phone: phone,
+          password: tempPassword,
           role: 'TEACHER',
+          otp: otp,
+          otpExpiresAt: otpExpiresAt,
+          isFirstLogin: true,
           teacherProfile: {
             create: {
               fullName: reqItem.name,
@@ -60,21 +68,44 @@ export async function POST(request: NextRequest) {
               heroSubtitle: `Faculty at ${reqItem.university}. Dedicated to academic excellence and research.`,
               bioText: `${reqItem.name} is a faculty member at ${reqItem.university} specializing in ${reqItem.expertise}.`,
               contactEmail: reqItem.email,
+              contactPhone: phone,
             },
           },
         },
         include: { teacherProfile: true },
       });
+    } else {
+      userRecord = await prisma.user.update({
+        where: { email: reqItem.email },
+        data: {
+          phone: phone,
+          otp: otp,
+          otpExpiresAt: otpExpiresAt,
+          isFirstLogin: true,
+        },
+        include: { teacherProfile: true },
+      });
     }
 
+    // Update Request status & OTP
     await prisma.teacherRequest.update({
       where: { id: requestId },
-      data: { status: 'APPROVED' },
+      data: {
+        status: 'APPROVED',
+        otp: otp,
+        otpExpiresAt: otpExpiresAt,
+      },
     });
+
+    // Trigger Automatic SMS Dispatch
+    const smsResult = await sendSMSOTP(phone, reqItem.name, otp);
 
     return NextResponse.json({
       success: true,
-      message: `Teacher request approved! Account created for ${reqItem.email} with default password: ${defaultPassword}`,
+      message: `Teacher request approved! Automatic SMS OTP (${otp}) dispatched to ${phone}. The teacher can now complete first-time OTP verification & set password.`,
+      otp: otp,
+      phone: phone,
+      smsProvider: smsResult.provider,
       user: userRecord,
     });
   } catch (error) {
