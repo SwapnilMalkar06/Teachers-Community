@@ -16,7 +16,8 @@ interface HeroProps {
     fullName: string;
     designation: string;
     department: string;
-    institution: string;
+    university?: string;
+    institution?: string;
     heroTitle: string;
     heroSubtitle: string;
     profileImageUrl: string;
@@ -158,7 +159,7 @@ export default function HeroSection({ profile }: HeroProps) {
               {/* Image Frame */}
               <div className="relative w-full h-full rounded-3xl overflow-hidden border-4 border-white shadow-xl bg-slate-200">
                 <Image
-                  src={profile.profileImageUrl}
+                  src={profile.profileImageUrl || '/images/profile.jpg'}
                   alt={profile.fullName}
                   fill
                   className="object-cover object-top hover:scale-105 transition-transform duration-500"

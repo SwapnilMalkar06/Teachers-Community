@@ -8,29 +8,71 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum Role {
+  ADMIN
+  TEACHER
+  STUDENT
+}
+
+model User {
+  id             String          @id @default(uuid())
+  email          String          @unique
+  password       String
+  name           String
+  role           Role            @default(STUDENT)
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  teacherProfile TeacherProfile?
+  studentProfile StudentProfile?
+}
+
+model StudentProfile {
+  id          String   @id @default(uuid())
+  userId      String   @unique
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  university  String   @default("Mumbai University")
+  department  String   @default("Computer Engineering")
+  yearOfStudy String   @default("TE")
+  createdAt   DateTime @default(now())
+}
+
 model TeacherProfile {
-  id               String   @id @default(uuid())
-  fullName         String   @default("Prof. Ashwini Sawant")
-  designation      String   @default("Assistant Professor")
-  department       String   @default("Computer Engineering")
-  institution      String   @default("Engineering Institute")
-  heroTitle        String   @default("Educator, Researcher & Mentor")
-  heroSubtitle     String   @db.Text
-  profileImageUrl  String   @default("/images/profile.jpg")
-  bioText          String   @db.Text
-  phdSummary       String?  @db.Text
+  id               String                @id @default(uuid())
+  userId           String?               @unique
+  user             User?                 @relation(fields: [userId], references: [id], onDelete: SetNull)
+  fullName         String                @default("Prof. Ashwini Sawant")
+  designation      String                @default("Assistant Professor")
+  department       String                @default("Computer Engineering")
+  university       String                @default("Mumbai University")
+  expertise        String                @default("Web Technologies, Cloud Computing")
+  heroTitle        String                @default("Educator, Researcher & Mentor")
+  heroSubtitle     String                @db.Text
+  profileImageUrl  String                @default("/images/profile.jpg")
+  bioText          String                @db.Text
+  phdSummary       String?               @db.Text
   officeAddress    String?
-  contactEmail     String   @default("ashwini.sawant@example.com")
+  contactEmail     String                @default("ashwini.sawant@example.com")
   contactPhone     String?
   googleScholarUrl String?
   linkedInUrl      String?
   researchGateUrl  String?
   orcidUrl         String?
-  updatedAt        DateTime @updatedAt
+  createdAt        DateTime              @default(now())
+  updatedAt        DateTime              @updatedAt
+  subjects         Subject[]
+  resources        TeachingResource[]
+  videos           VideoLecture[]
+  publications     ResearchPublication[]
+  workshops        WorkshopFDP[]
+  certificates     Certificate[]
+  activities       Activity[]
+  blogs            BlogPost[]
 }
 
 model Subject {
   id          String             @id @default(uuid())
+  teacherId   String?
+  teacher     TeacherProfile?    @relation(fields: [teacherId], references: [id], onDelete: Cascade)
   code        String             @unique
   name        String
   department  String
@@ -49,26 +91,30 @@ enum ResourceType {
 }
 
 model TeachingResource {
-  id           String       @id @default(uuid())
+  id           String          @id @default(uuid())
+  teacherId    String?
+  teacher      TeacherProfile? @relation(fields: [teacherId], references: [id], onDelete: Cascade)
   subjectId    String
-  subject      Subject      @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  subject      Subject         @relation(fields: [subjectId], references: [id], onDelete: Cascade)
   title        String
-  description  String?      @db.Text
-  resourceType ResourceType @default(NOTES)
+  description  String?         @db.Text
+  resourceType ResourceType    @default(NOTES)
   fileUrl      String
-  fileType     String       @default("pdf")
-  uploadedAt   DateTime     @default(now())
+  fileType     String          @default("pdf")
+  uploadedAt   DateTime        @default(now())
 }
 
 model VideoLecture {
-  id          String   @id @default(uuid())
+  id          String          @id @default(uuid())
+  teacherId   String?
+  teacher     TeacherProfile? @relation(fields: [teacherId], references: [id], onDelete: Cascade)
   subjectId   String
-  subject     Subject  @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  subject     Subject         @relation(fields: [subjectId], references: [id], onDelete: Cascade)
   title       String
   youtubeUrl  String
   youtubeId   String?
-  description String?  @db.Text
-  createdAt   DateTime @default(now())
+  description String?         @db.Text
+  createdAt   DateTime        @default(now())
 }
 
 enum PublicationCategory {
@@ -79,6 +125,8 @@ enum PublicationCategory {
 
 model ResearchPublication {
   id                  String              @id @default(uuid())
+  teacherId           String?
+  teacher             TeacherProfile?     @relation(fields: [teacherId], references: [id], onDelete: Cascade)
   title               String
   authors             String
   journalOrConference String
@@ -104,27 +152,31 @@ enum EventType {
 }
 
 model WorkshopFDP {
-  id             String    @id @default(uuid())
+  id             String          @id @default(uuid())
+  teacherId      String?
+  teacher        TeacherProfile? @relation(fields: [teacherId], references: [id], onDelete: Cascade)
   title          String
-  type           EventType @default(FDP)
-  role           EventRole @default(ATTENDED)
+  type           EventType       @default(FDP)
+  role           EventRole       @default(ATTENDED)
   venue          String
   startDate      DateTime
   endDate        DateTime?
-  description    String?   @db.Text
+  description    String?         @db.Text
   certificateUrl String?
-  createdAt      DateTime  @default(now())
+  createdAt      DateTime        @default(now())
 }
 
 model Certificate {
-  id                  String    @id @default(uuid())
+  id                  String          @id @default(uuid())
+  teacherId           String?
+  teacher             TeacherProfile? @relation(fields: [teacherId], references: [id], onDelete: Cascade)
   title               String
   issuingOrganization String
   issueDate           DateTime
   credentialId        String?
   credentialUrl       String?
   imageUrl            String?
-  createdAt           DateTime  @default(now())
+  createdAt           DateTime        @default(now())
 }
 
 enum ActivityCategory {
@@ -136,6 +188,8 @@ enum ActivityCategory {
 
 model Activity {
   id          String           @id @default(uuid())
+  teacherId   String?
+  teacher     TeacherProfile?  @relation(fields: [teacherId], references: [id], onDelete: Cascade)
   title       String
   category    ActivityCategory @default(ACADEMIC)
   eventDate   DateTime
@@ -145,18 +199,20 @@ model Activity {
 }
 
 model BlogPost {
-  id                      String   @id @default(uuid())
+  id                      String          @id @default(uuid())
+  teacherId               String?
+  teacher                 TeacherProfile? @relation(fields: [teacherId], references: [id], onDelete: Cascade)
   title                   String
-  slug                    String   @unique
-  content                 String   @db.Text
-  summary                 String   @db.Text
+  slug                    String          @unique
+  content                 String          @db.Text
+  summary                 String          @db.Text
   coverImage              String?
-  isPublished             Boolean  @default(true)
-  viewCount               Int      @default(0)
-  estimatedReadingMinutes Int      @default(3)
-  totalEngagementSeconds  Int      @default(0)
-  createdAt               DateTime @default(now())
-  updatedAt               DateTime @updatedAt
+  isPublished             Boolean         @default(true)
+  viewCount               Int             @default(0)
+  estimatedReadingMinutes Int             @default(3)
+  totalEngagementSeconds  Int             @default(0)
+  createdAt               DateTime        @default(now())
+  updatedAt               DateTime        @updatedAt
 }
 
 model GalleryItem {

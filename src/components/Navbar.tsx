@@ -1,48 +1,69 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { 
-  GraduationCap, 
-  ChevronDown, 
+  BookOpen, 
+  Building, 
+  Users, 
+  FileText, 
   Menu, 
   X, 
-  BookOpen, 
-  FileText, 
-  Presentation, 
-  Video, 
-  HelpCircle, 
-  Award, 
-  FileBadge, 
-  Users, 
-  ShieldAlert 
+  UserCheck, 
+  GraduationCap, 
+  ShieldCheck, 
+  LogOut,
+  ChevronDown
 } from 'lucide-react';
 
 export default function Navbar() {
   const pathname = usePathname();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [teachingOpen, setTeachingOpen] = useState(false);
-  const [researchOpen, setResearchOpen] = useState(false);
+  const [session, setSession] = useState<any>(null);
+
+  useEffect(() => {
+    fetchSession();
+  }, [pathname]);
+
+  const fetchSession = async () => {
+    try {
+      const res = await fetch('/api/auth/session');
+      const data = await res.json();
+      if (data.isAuthenticated && data.user) {
+        setSession(data.user);
+      } else {
+        setSession(null);
+      }
+    } catch (err) {
+      setSession(null);
+    }
+  };
+
+  const handleLogout = async () => {
+    await fetch('/api/auth/logout', { method: 'POST' });
+    setSession(null);
+    window.location.href = '/login';
+  };
 
   const isActive = (path: string) => pathname === path || pathname.startsWith(path + '/');
 
   return (
-    <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-slate-200 shadow-sm">
+    <header className="sticky top-0 z-50 bg-slate-950/90 backdrop-blur-xl border-b border-slate-800 text-slate-100 shadow-lg">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-20">
           
           {/* Brand Logo & Name */}
           <Link href="/" className="flex items-center space-x-3 group">
-            <div className="w-11 h-11 rounded-xl bg-sky-700 text-white flex items-center justify-center shadow-md group-hover:bg-sky-800 transition-colors">
-              <GraduationCap className="w-6 h-6" />
+            <div className="w-11 h-11 rounded-2xl bg-gradient-to-tr from-sky-600 to-indigo-600 text-white flex items-center justify-center shadow-lg shadow-sky-950 group-hover:scale-105 transition-transform">
+              <BookOpen className="w-6 h-6" />
             </div>
             <div>
-              <span className="text-xl font-bold tracking-tight text-slate-900 block leading-none">
-                Prof. Ashwini Sawant
+              <span className="text-xl font-black tracking-tight text-white block leading-none">
+                Teachers<span className="text-sky-400">-Community</span>
               </span>
-              <span className="text-xs font-medium text-sky-700 block mt-1">
-                Assistant Professor & Researcher
+              <span className="text-[11px] font-semibold text-slate-400 block mt-1">
+                Multi-University Academic Platform
               </span>
             </div>
           </Link>
@@ -51,209 +72,83 @@ export default function Navbar() {
           <nav className="hidden lg:flex items-center space-x-1">
             <Link
               href="/"
-              className={`px-3 py-2 rounded-lg text-sm font-semibold transition-colors ${
+              className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all ${
                 pathname === '/'
-                  ? 'text-sky-700 bg-sky-50'
-                  : 'text-slate-700 hover:text-sky-700 hover:bg-slate-50'
+                  ? 'text-sky-400 bg-sky-500/10 border border-sky-500/20'
+                  : 'text-slate-300 hover:text-white hover:bg-slate-900'
               }`}
             >
               Home
             </Link>
 
             <Link
-              href="/about"
-              className={`px-3 py-2 rounded-lg text-sm font-semibold transition-colors ${
-                isActive('/about')
-                  ? 'text-sky-700 bg-sky-50'
-                  : 'text-slate-700 hover:text-sky-700 hover:bg-slate-50'
+              href="/teachers"
+              className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center space-x-1.5 ${
+                isActive('/teachers')
+                  ? 'text-sky-400 bg-sky-500/10 border border-sky-500/20'
+                  : 'text-slate-300 hover:text-white hover:bg-slate-900'
               }`}
             >
-              About Me
-            </Link>
-
-            {/* Teaching Dropdown */}
-            <div 
-              className="relative"
-              onMouseEnter={() => setTeachingOpen(true)}
-              onMouseLeave={() => setTeachingOpen(false)}
-            >
-              <button
-                className={`flex items-center space-x-1 px-3 py-2 rounded-lg text-sm font-semibold transition-colors ${
-                  isActive('/teaching')
-                    ? 'text-sky-700 bg-sky-50'
-                    : 'text-slate-700 hover:text-sky-700 hover:bg-slate-50'
-                }`}
-              >
-                <span>Teaching</span>
-                <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${teachingOpen ? 'rotate-180' : ''}`} />
-              </button>
-
-              {teachingOpen && (
-                <div className="absolute left-0 mt-1 w-60 bg-white rounded-xl shadow-xl border border-slate-100 py-2 z-50 animate-in fade-in slide-in-from-top-2 duration-150">
-                  <Link
-                    href="/teaching/subjects"
-                    className="flex items-center space-x-2.5 px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-sky-50 hover:text-sky-700 transition-colors"
-                  >
-                    <BookOpen className="w-4 h-4 text-sky-600" />
-                    <span>Subjects</span>
-                  </Link>
-                  <Link
-                    href="/teaching/notes"
-                    className="flex items-center space-x-2.5 px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-sky-50 hover:text-sky-700 transition-colors"
-                  >
-                    <FileText className="w-4 h-4 text-sky-600" />
-                    <span>Notes</span>
-                  </Link>
-                  <Link
-                    href="/teaching/ppts"
-                    className="flex items-center space-x-2.5 px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-sky-50 hover:text-sky-700 transition-colors"
-                  >
-                    <Presentation className="w-4 h-4 text-sky-600" />
-                    <span>PPTs</span>
-                  </Link>
-                  <Link
-                    href="/teaching/videos"
-                    className="flex items-center space-x-2.5 px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-sky-50 hover:text-sky-700 transition-colors"
-                  >
-                    <Video className="w-4 h-4 text-sky-600" />
-                    <span>Video Lectures</span>
-                  </Link>
-                  <Link
-                    href="/teaching/question-banks"
-                    className="flex items-center space-x-2.5 px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-sky-50 hover:text-sky-700 transition-colors"
-                  >
-                    <HelpCircle className="w-4 h-4 text-sky-600" />
-                    <span>Question Banks</span>
-                  </Link>
-                </div>
-              )}
-            </div>
-
-            <Link
-              href="/fdps-workshops"
-              className={`px-3 py-2 rounded-lg text-sm font-semibold transition-colors ${
-                isActive('/fdps-workshops')
-                  ? 'text-sky-700 bg-sky-50'
-                  : 'text-slate-700 hover:text-sky-700 hover:bg-slate-50'
-              }`}
-            >
-              FDPs & Workshops
+              <Building className="w-3.5 h-3.5 text-sky-400" />
+              <span>Teachers Directory</span>
             </Link>
 
             <Link
-              href="/certificates"
-              className={`px-3 py-2 rounded-lg text-sm font-semibold transition-colors ${
-                isActive('/certificates')
-                  ? 'text-sky-700 bg-sky-50'
-                  : 'text-slate-700 hover:text-sky-700 hover:bg-slate-50'
+              href="/resources"
+              className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center space-x-1.5 ${
+                isActive('/resources')
+                  ? 'text-amber-400 bg-amber-500/10 border border-amber-500/20'
+                  : 'text-slate-300 hover:text-white hover:bg-slate-900'
               }`}
             >
-              Certificates
+              <FileText className="w-3.5 h-3.5 text-amber-400" />
+              <span>Notes, PPTs & Q-Banks</span>
             </Link>
 
-            {/* Research Dropdown */}
-            <div 
-              className="relative"
-              onMouseEnter={() => setResearchOpen(true)}
-              onMouseLeave={() => setResearchOpen(false)}
-            >
-              <button
-                className={`flex items-center space-x-1 px-3 py-2 rounded-lg text-sm font-semibold transition-colors ${
-                  isActive('/research')
-                    ? 'text-sky-700 bg-sky-50'
-                    : 'text-slate-700 hover:text-sky-700 hover:bg-slate-50'
-                }`}
-              >
-                <span>Research</span>
-                <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${researchOpen ? 'rotate-180' : ''}`} />
-              </button>
+            {/* Role-based Dashboard or Login Link */}
+            {session ? (
+              <div className="flex items-center space-x-2 pl-2">
+                <Link
+                  href={
+                    session.role === 'ADMIN'
+                      ? '/admin/dashboard'
+                      : session.role === 'TEACHER'
+                      ? '/teacher/dashboard'
+                      : '/student/dashboard'
+                  }
+                  className="px-4 py-2 rounded-xl bg-sky-600 hover:bg-sky-500 text-white font-bold text-xs shadow-md shadow-sky-900/30 flex items-center space-x-1.5"
+                >
+                  {session.role === 'ADMIN' && <ShieldCheck className="w-3.5 h-3.5 text-rose-300" />}
+                  {session.role === 'TEACHER' && <UserCheck className="w-3.5 h-3.5 text-sky-200" />}
+                  {session.role === 'STUDENT' && <GraduationCap className="w-3.5 h-3.5 text-emerald-200" />}
+                  <span>{session.role} Dashboard</span>
+                </Link>
 
-              {researchOpen && (
-                <div className="absolute left-0 mt-1 w-56 bg-white rounded-xl shadow-xl border border-slate-100 py-2 z-50 animate-in fade-in slide-in-from-top-2 duration-150">
-                  <Link
-                    href="/research/phd"
-                    className="flex items-center space-x-2.5 px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-sky-50 hover:text-sky-700 transition-colors"
-                  >
-                    <Award className="w-4 h-4 text-sky-600" />
-                    <span>PhD Thesis</span>
-                  </Link>
-                  <Link
-                    href="/research/publications"
-                    className="flex items-center space-x-2.5 px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-sky-50 hover:text-sky-700 transition-colors"
-                  >
-                    <FileBadge className="w-4 h-4 text-sky-600" />
-                    <span>Publications</span>
-                  </Link>
-                  <Link
-                    href="/research/conferences"
-                    className="flex items-center space-x-2.5 px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-sky-50 hover:text-sky-700 transition-colors"
-                  >
-                    <Users className="w-4 h-4 text-sky-600" />
-                    <span>Conferences</span>
-                  </Link>
-                </div>
-              )}
-            </div>
-
-            <Link
-              href="/activities"
-              className={`px-3 py-2 rounded-lg text-sm font-semibold transition-colors ${
-                isActive('/activities')
-                  ? 'text-sky-700 bg-sky-50'
-                  : 'text-slate-700 hover:text-sky-700 hover:bg-slate-50'
-              }`}
-            >
-              Activities
-            </Link>
-
-            <Link
-              href="/gallery"
-              className={`px-3 py-2 rounded-lg text-sm font-semibold transition-colors ${
-                isActive('/gallery')
-                  ? 'text-sky-700 bg-sky-50'
-                  : 'text-slate-700 hover:text-sky-700 hover:bg-slate-50'
-              }`}
-            >
-              Gallery
-            </Link>
-
-            <Link
-              href="/blog"
-              className={`px-3 py-2 rounded-lg text-sm font-semibold transition-colors ${
-                isActive('/blog')
-                  ? 'text-sky-700 bg-sky-50'
-                  : 'text-slate-700 hover:text-sky-700 hover:bg-slate-50'
-              }`}
-            >
-              Blog
-            </Link>
-
-            <Link
-              href="/contact"
-              className={`px-3 py-2 rounded-lg text-sm font-semibold transition-colors ${
-                isActive('/contact')
-                  ? 'text-sky-700 bg-sky-50'
-                  : 'text-slate-700 hover:text-sky-700 hover:bg-slate-50'
-              }`}
-            >
-              Contact
-            </Link>
-
-            {/* Admin Control Link */}
-            <Link
-              href="/admin"
-              className="ml-2 inline-flex items-center space-x-1.5 px-3.5 py-2 rounded-lg text-xs font-bold bg-slate-900 text-white hover:bg-sky-800 transition-colors shadow-sm"
-            >
-              <ShieldAlert className="w-3.5 h-3.5 text-sky-400" />
-              <span>Admin Portal</span>
-            </Link>
+                <button
+                  onClick={handleLogout}
+                  className="p-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-400 hover:text-rose-400 border border-slate-800 transition-colors"
+                  title="Logout"
+                >
+                  <LogOut className="w-4 h-4" />
+                </button>
+              </div>
+            ) : (
+              <div className="flex items-center space-x-2 pl-2">
+                <Link
+                  href="/login"
+                  className="px-4 py-2.5 rounded-xl bg-sky-600 hover:bg-sky-500 text-white font-bold text-xs shadow-lg shadow-sky-900/30 transition-all flex items-center space-x-1.5"
+                >
+                  <span>Sign In / 3 Logins</span>
+                </Link>
+              </div>
+            )}
           </nav>
 
           {/* Mobile Menu Button */}
           <div className="lg:hidden flex items-center">
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="p-2 rounded-lg text-slate-700 hover:bg-slate-100 transition-colors"
+              className="p-2 rounded-xl text-slate-300 hover:bg-slate-900 transition-colors"
               aria-label="Toggle mobile menu"
             >
               {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
@@ -264,43 +159,53 @@ export default function Navbar() {
 
       {/* Mobile Drawer Menu */}
       {mobileMenuOpen && (
-        <div className="lg:hidden bg-white border-b border-slate-200 px-4 pt-2 pb-6 space-y-1 shadow-lg">
+        <div className="lg:hidden bg-slate-950 border-b border-slate-800 px-4 pt-2 pb-6 space-y-2 shadow-xl">
           <Link
             href="/"
             onClick={() => setMobileMenuOpen(false)}
-            className="block px-3 py-2 rounded-md text-base font-semibold text-slate-800 hover:bg-sky-50"
+            className="block px-3 py-2 rounded-xl text-sm font-bold text-slate-200 hover:bg-slate-900"
           >
             Home
           </Link>
           <Link
-            href="/about"
+            href="/teachers"
             onClick={() => setMobileMenuOpen(false)}
-            className="block px-3 py-2 rounded-md text-base font-semibold text-slate-800 hover:bg-sky-50"
+            className="block px-3 py-2 rounded-xl text-sm font-bold text-slate-200 hover:bg-slate-900"
           >
-            About Me
+            Teachers Directory (By University & Expertise)
           </Link>
-          <div className="pl-3 border-l-2 border-sky-600 my-2 space-y-1">
-            <div className="text-xs font-bold uppercase tracking-wider text-sky-700 py-1">Teaching</div>
-            <Link href="/teaching/subjects" onClick={() => setMobileMenuOpen(false)} className="block py-1 text-sm text-slate-700 hover:text-sky-700">Subjects</Link>
-            <Link href="/teaching/notes" onClick={() => setMobileMenuOpen(false)} className="block py-1 text-sm text-slate-700 hover:text-sky-700">Notes</Link>
-            <Link href="/teaching/ppts" onClick={() => setMobileMenuOpen(false)} className="block py-1 text-sm text-slate-700 hover:text-sky-700">PPTs</Link>
-            <Link href="/teaching/videos" onClick={() => setMobileMenuOpen(false)} className="block py-1 text-sm text-slate-700 hover:text-sky-700">Video Lectures</Link>
-            <Link href="/teaching/question-banks" onClick={() => setMobileMenuOpen(false)} className="block py-1 text-sm text-slate-700 hover:text-sky-700">Question Banks</Link>
-          </div>
-          <Link href="/fdps-workshops" onClick={() => setMobileMenuOpen(false)} className="block px-3 py-2 rounded-md text-base font-semibold text-slate-800 hover:bg-sky-50">FDPs & Workshops</Link>
-          <Link href="/certificates" onClick={() => setMobileMenuOpen(false)} className="block px-3 py-2 rounded-md text-base font-semibold text-slate-800 hover:bg-sky-50">Certificates</Link>
-          <div className="pl-3 border-l-2 border-sky-600 my-2 space-y-1">
-            <div className="text-xs font-bold uppercase tracking-wider text-sky-700 py-1">Research</div>
-            <Link href="/research/phd" onClick={() => setMobileMenuOpen(false)} className="block py-1 text-sm text-slate-700 hover:text-sky-700">PhD Thesis</Link>
-            <Link href="/research/publications" onClick={() => setMobileMenuOpen(false)} className="block py-1 text-sm text-slate-700 hover:text-sky-700">Publications</Link>
-            <Link href="/research/conferences" onClick={() => setMobileMenuOpen(false)} className="block py-1 text-sm text-slate-700 hover:text-sky-700">Conferences</Link>
-          </div>
-          <Link href="/activities" onClick={() => setMobileMenuOpen(false)} className="block px-3 py-2 rounded-md text-base font-semibold text-slate-800 hover:bg-sky-50">Activities</Link>
-          <Link href="/gallery" onClick={() => setMobileMenuOpen(false)} className="block px-3 py-2 rounded-md text-base font-semibold text-slate-800 hover:bg-sky-50">Gallery</Link>
-          <Link href="/blog" onClick={() => setMobileMenuOpen(false)} className="block px-3 py-2 rounded-md text-base font-semibold text-slate-800 hover:bg-sky-50">Blog</Link>
-          <Link href="/contact" onClick={() => setMobileMenuOpen(false)} className="block px-3 py-2 rounded-md text-base font-semibold text-slate-800 hover:bg-sky-50">Contact</Link>
-          <div className="pt-2">
-            <Link href="/admin" onClick={() => setMobileMenuOpen(false)} className="block w-full text-center py-2.5 bg-slate-900 text-white rounded-lg text-sm font-bold">Admin Portal</Link>
+          <Link
+            href="/resources"
+            onClick={() => setMobileMenuOpen(false)}
+            className="block px-3 py-2 rounded-xl text-sm font-bold text-slate-200 hover:bg-slate-900"
+          >
+            Notes, PPTs & Question Banks Hub
+          </Link>
+
+          <div className="pt-3 border-t border-slate-800">
+            {session ? (
+              <Link
+                href={
+                  session.role === 'ADMIN'
+                    ? '/admin/dashboard'
+                    : session.role === 'TEACHER'
+                    ? '/teacher/dashboard'
+                    : '/student/dashboard'
+                }
+                onClick={() => setMobileMenuOpen(false)}
+                className="block w-full text-center py-2.5 bg-sky-600 text-white rounded-xl text-xs font-bold"
+              >
+                Go to {session.role} Dashboard
+              </Link>
+            ) : (
+              <Link
+                href="/login"
+                onClick={() => setMobileMenuOpen(false)}
+                className="block w-full text-center py-2.5 bg-sky-600 text-white rounded-xl text-xs font-bold"
+              >
+                Sign In (Admin / Teacher / Student)
+              </Link>
+            )}
           </div>
         </div>
       )}

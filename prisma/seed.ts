@@ -1,127 +1,314 @@
-import { PrismaClient, ResourceType, PublicationCategory, EventRole, EventType, ActivityCategory } from '@prisma/client';
+import { PrismaClient, Role, ResourceType, PublicationCategory, EventRole, EventType, ActivityCategory } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
 async function main() {
-  console.log('Seeding MySQL database for Prof. Ashwini Sawant...');
+  console.log('Seeding database for Teachers-Community multi-teacher platform...');
 
-  // 1. Create or Update Teacher Profile
-  const profile = await prisma.teacherProfile.upsert({
-    where: { id: 'prof-ashwini-sawant' },
-    update: {},
-    create: {
-      id: 'prof-ashwini-sawant',
+  // Clean existing data in order
+  await prisma.teachingResource.deleteMany();
+  await prisma.videoLecture.deleteMany();
+  await prisma.subject.deleteMany();
+  await prisma.researchPublication.deleteMany();
+  await prisma.workshopFDP.deleteMany();
+  await prisma.certificate.deleteMany();
+  await prisma.activity.deleteMany();
+  await prisma.blogPost.deleteMany();
+  await prisma.galleryItem.deleteMany();
+  await prisma.contactMessage.deleteMany();
+  await prisma.studentProfile.deleteMany();
+  await prisma.teacherProfile.deleteMany();
+  await prisma.user.deleteMany();
+
+  // 1. Create Admin Account
+  const adminUser = await prisma.user.create({
+    data: {
+      email: 'admin@teacherscommunity.com',
+      password: 'admin123',
+      name: 'System Administrator',
+      role: Role.ADMIN,
+    },
+  });
+  console.log('Admin account created:', adminUser.email);
+
+  // 2. Create Student Account
+  const studentUser = await prisma.user.create({
+    data: {
+      email: 'student@teacherscommunity.com',
+      password: 'student123',
+      name: 'Rohan Sharma',
+      role: Role.STUDENT,
+      studentProfile: {
+        create: {
+          university: 'Mumbai University',
+          department: 'Computer Engineering',
+          yearOfStudy: 'TE',
+        },
+      },
+    },
+  });
+  console.log('Student account created:', studentUser.email);
+
+  // 3. Create Teacher 1: Prof. Ashwini Sawant (Mumbai University)
+  const teacher1User = await prisma.user.create({
+    data: {
+      email: 'ashwini@teacherscommunity.com',
+      password: 'teacher123',
+      name: 'Prof. Ashwini Sawant',
+      role: Role.TEACHER,
+    },
+  });
+
+  const teacher1Profile = await prisma.teacherProfile.create({
+    data: {
+      userId: teacher1User.id,
       fullName: 'Prof. Ashwini Sawant',
       designation: 'Assistant Professor',
-      department: 'Department of Computer Engineering',
-      institution: 'Saraswati College of Engineering / University Institute',
-      heroTitle: 'Educator, Researcher & Academic Mentor',
-      heroSubtitle: 'Specializing in Computer Networks, Data Structures, Distributed Systems, and Machine Learning. Passionate about empowering students through interactive learning and quality research.',
-      profileImageUrl: '/images/profile.png',
-      bioText: 'Prof. Ashwini Sawant has over 12+ years of academic teaching experience in Computer Engineering. She has guided numerous undergraduate and postgraduate research projects, published research papers in reputed international journals, and organized national-level FDPs and workshops. Her focus areas include Cloud Computing, Artificial Intelligence, and Algorithmic System Optimization.',
-      phdSummary: 'Pursuing PhD research focused on Machine Learning-driven Dynamic Load Balancing in Distributed Cloud Frameworks.',
-      officeAddress: 'Room 402, Academic Block A, Department of Computer Engineering',
-      contactEmail: 'ashwini.sawant@engg.edu.in',
+      department: 'Computer Engineering',
+      university: 'Mumbai University',
+      expertise: 'Web Technologies, Cloud Computing, Software Engineering',
+      heroTitle: 'Educator, Researcher & Mentor',
+      heroSubtitle: 'Specializing in Web Development, Computer Networks, and Cloud System Architecture. Empowering students with modern skills.',
+      profileImageUrl: '/images/profile.jpg',
+      bioText: 'Prof. Ashwini Sawant has over 12+ years of teaching experience at Mumbai University. She specializes in Web Technologies, Cloud Infrastructure, and Software Engineering methodologies.',
+      phdSummary: 'Pursuing PhD research on Distributed Cloud Architectures and Load Balancing.',
+      officeAddress: 'Room 402, Academic Block A, Mumbai University Campus',
+      contactEmail: 'ashwini@teacherscommunity.com',
       contactPhone: '+91 98765 43210',
       googleScholarUrl: 'https://scholar.google.com',
       linkedInUrl: 'https://linkedin.com',
-      researchGateUrl: 'https://researchgate.net',
-      orcidUrl: 'https://orcid.org',
     },
   });
 
-  // 2. Add Subjects
-  const dsSubject = await prisma.subject.upsert({
-    where: { code: 'CS301' },
-    update: {},
-    create: {
-      code: 'CS301',
+  // Teacher 1 Subjects & Resources
+  const subject1_1 = await prisma.subject.create({
+    data: {
+      teacherId: teacher1Profile.id,
+      code: 'MU-CS301',
       name: 'Data Structures & Algorithms',
       department: 'Computer Engineering',
       semester: 'Semester III',
-      description: 'Comprehensive study of arrays, linked lists, stacks, queues, trees, graphs, hashing, sorting techniques, and algorithmic complexity.',
+      description: 'Covers arrays, linked lists, stacks, queues, trees, graphs, sorting, and algorithmic complexity.',
     },
   });
 
-  const cnSubject = await prisma.subject.upsert({
-    where: { code: 'CS502' },
-    update: {},
-    create: {
-      code: 'CS502',
-      name: 'Computer Networks',
+  const subject1_2 = await prisma.subject.create({
+    data: {
+      teacherId: teacher1Profile.id,
+      code: 'MU-CS502',
+      name: 'Web Engineering & Cloud Computing',
       department: 'Computer Engineering',
       semester: 'Semester V',
-      description: 'Detailed analysis of OSI model, TCP/IP protocol suite, data link controls, routing algorithms, transport layer congestion control, and network security.',
+      description: 'Modern full-stack architecture, REST APIs, microservices, and cloud service deployment models.',
     },
   });
 
-  // 3. Add Teaching Resources (Notes, PPTs, Question Banks)
   await prisma.teachingResource.createMany({
     data: [
       {
-        subjectId: dsSubject.id,
-        title: 'Module 1: Stacks and Queues Implementation Notes',
-        description: 'Complete PDF notes covering array and linked list implementation of Stacks, Queues, Circular Queues, and Priority Queues.',
+        teacherId: teacher1Profile.id,
+        subjectId: subject1_1.id,
+        title: 'Data Structures Module 1: Stacks and Queues Notes',
+        description: 'Complete PDF notes covering array and linked list implementation of Stacks, Queues, and Circular Queues.',
         resourceType: ResourceType.NOTES,
         fileUrl: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf',
         fileType: 'pdf',
       },
       {
-        subjectId: dsSubject.id,
-        title: 'Module 3: Binary Search Trees & Graph Algorithms PPT Slides',
-        description: 'Presentation slides on BST operations, AVL Trees, BFS, DFS, Dijkstra & Prim algorithms.',
+        teacherId: teacher1Profile.id,
+        subjectId: subject1_1.id,
+        title: 'Binary Search Trees & Graph Algorithms PPT Presentation',
+        description: 'Comprehensive slides on BST operations, AVL Trees, BFS, DFS, Dijkstra, and Prim algorithms.',
         resourceType: ResourceType.PPT,
         fileUrl: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf',
         fileType: 'pdf',
       },
       {
-        subjectId: dsSubject.id,
-        title: 'Data Structures Question Bank & Previous Semester Keys',
-        description: 'Selected 2-mark and 10-mark questions with model answer keys for End Semester Examinations.',
+        teacherId: teacher1Profile.id,
+        subjectId: subject1_1.id,
+        title: 'DSA Question Bank & Previous Semester Papers with Keys',
+        description: 'Curated list of 2-mark and 10-mark questions with detailed solution keys for Mumbai University End Sem exam.',
         resourceType: ResourceType.QUESTION_BANK,
         fileUrl: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf',
         fileType: 'pdf',
       },
       {
-        subjectId: cnSubject.id,
-        title: 'TCP/IP Protocol Suite & IPv4 vs IPv6 Subnetting Notes',
-        description: 'Detailed lecture notes on IP Addressing, VLSM, CIDR notation, and IP packet format.',
-        resourceType: ResourceType.NOTES,
+        teacherId: teacher1Profile.id,
+        subjectId: subject1_2.id,
+        title: 'Cloud Service Models (IaaS, PaaS, SaaS) & AWS Architecture PPT',
+        description: 'Detailed slides explaining cloud deployment models, EC2, S3, and serverless compute.',
+        resourceType: ResourceType.PPT,
+        fileUrl: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf',
+        fileType: 'pdf',
+      },
+      {
+        teacherId: teacher1Profile.id,
+        subjectId: subject1_2.id,
+        title: 'Web Engineering Question Bank 2026',
+        description: 'Important question bank covering Next.js, Node.js, REST API design, and Docker deployment.',
+        resourceType: ResourceType.QUESTION_BANK,
         fileUrl: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf',
         fileType: 'pdf',
       },
     ],
-    skipDuplicates: true,
   });
 
-  // 4. Add Video Lectures
-  await prisma.videoLecture.createMany({
+  // 4. Create Teacher 2: Dr. Rajesh Sharma (SPPU Pune)
+  const teacher2User = await prisma.user.create({
+    data: {
+      email: 'rajesh@teacherscommunity.com',
+      password: 'teacher123',
+      name: 'Dr. Rajesh Sharma',
+      role: Role.TEACHER,
+    },
+  });
+
+  const teacher2Profile = await prisma.teacherProfile.create({
+    data: {
+      userId: teacher2User.id,
+      fullName: 'Dr. Rajesh Sharma',
+      designation: 'Associate Professor',
+      department: 'Data Science & AI',
+      university: 'SPPU Pune',
+      expertise: 'Machine Learning, Artificial Intelligence, Python Programming',
+      heroTitle: 'AI Researcher & Data Science Specialist',
+      heroSubtitle: 'Passionate about Deep Learning, Natural Language Processing, and intelligent data systems.',
+      profileImageUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=400',
+      bioText: 'Dr. Rajesh Sharma holds a PhD in AI & Machine Learning from SPPU Pune. He has over 15 years of research experience and has published 25+ IEEE research papers.',
+      phdSummary: 'PhD in Optimization Algorithms for Neural Network Hyperparameter Tuning.',
+      officeAddress: 'Department of Computer Science, SPPU Pune',
+      contactEmail: 'rajesh@teacherscommunity.com',
+      contactPhone: '+91 98123 45678',
+      googleScholarUrl: 'https://scholar.google.com',
+      linkedInUrl: 'https://linkedin.com',
+    },
+  });
+
+  const subject2_1 = await prisma.subject.create({
+    data: {
+      teacherId: teacher2Profile.id,
+      code: 'SPPU-AI401',
+      name: 'Machine Learning Foundations',
+      department: 'Data Science & AI',
+      semester: 'Semester IV',
+      description: 'Supervised and unsupervised learning techniques, linear regression, decision trees, SVM, and clustering.',
+    },
+  });
+
+  await prisma.teachingResource.createMany({
     data: [
       {
-        subjectId: dsSubject.id,
-        title: 'Lecture 1: Introduction to Data Structures & Time Complexity Analysis',
-        youtubeUrl: 'https://www.youtube.com/watch?v=RBSGKlAvoiM',
-        youtubeId: 'RBSGKlAvoiM',
-        description: 'Detailed lecture explaining Big-O notation, time-space tradeoffs, and fundamental abstract data types.',
+        teacherId: teacher2Profile.id,
+        subjectId: subject2_1.id,
+        title: 'Supervised Learning & Regression Algorithms Notes',
+        description: 'In-depth notes on Linear Regression, Logistic Regression, Gradient Descent, and Loss functions.',
+        resourceType: ResourceType.NOTES,
+        fileUrl: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf',
+        fileType: 'pdf',
       },
       {
-        subjectId: cnSubject.id,
-        title: 'Lecture 4: Subnetting Made Easy & IPv4 Addressing Explained',
-        youtubeUrl: 'https://www.youtube.com/watch?v=vcrJzvh6i1U',
-        youtubeId: 'vcrJzvh6i1U',
-        description: 'Step-by-step tutorial on calculating netmask, broadcast address, and host ranges for classful & classless IPv4 addressing.',
+        teacherId: teacher2Profile.id,
+        subjectId: subject2_1.id,
+        title: 'Neural Networks & Deep Learning Intro PPT Slides',
+        description: 'Visual presentation slides introducing Artificial Neural Networks, Backpropagation, and Activation functions.',
+        resourceType: ResourceType.PPT,
+        fileUrl: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf',
+        fileType: 'pdf',
+      },
+      {
+        teacherId: teacher2Profile.id,
+        subjectId: subject2_1.id,
+        title: 'Machine Learning Mid-Term Question Bank & Solutions',
+        description: 'Comprehensive problem sets and solution keys for SPPU Machine Learning semester exams.',
+        resourceType: ResourceType.QUESTION_BANK,
+        fileUrl: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf',
+        fileType: 'pdf',
       },
     ],
-    skipDuplicates: true,
   });
 
-  // 5. Add Research Publications
+  // 5. Create Teacher 3: Prof. Sunita Verma (IIT Bombay)
+  const teacher3User = await prisma.user.create({
+    data: {
+      email: 'sunita@teacherscommunity.com',
+      password: 'teacher123',
+      name: 'Prof. Sunita Verma',
+      role: Role.TEACHER,
+    },
+  });
+
+  const teacher3Profile = await prisma.teacherProfile.create({
+    data: {
+      userId: teacher3User.id,
+      fullName: 'Prof. Sunita Verma',
+      designation: 'Professor',
+      department: 'Computer Science',
+      university: 'IIT Bombay',
+      expertise: 'Cybersecurity, Cryptography, Network Protocols',
+      heroTitle: 'Cybersecurity Expert & Cryptography Professor',
+      heroSubtitle: 'Teaching advanced network security, blockchain fundamentals, and threat analysis.',
+      profileImageUrl: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&q=80&w=400',
+      bioText: 'Prof. Sunita Verma has been teaching Cybersecurity and Cryptography at IIT Bombay for 18 years. She leads national cyber-defense initiatives.',
+      phdSummary: 'PhD in Post-Quantum Cryptographic Protocols.',
+      officeAddress: 'Kresge Building, CSE Dept, IIT Bombay',
+      contactEmail: 'sunita@teacherscommunity.com',
+      contactPhone: '+91 97654 32109',
+      googleScholarUrl: 'https://scholar.google.com',
+      linkedInUrl: 'https://linkedin.com',
+    },
+  });
+
+  const subject3_1 = await prisma.subject.create({
+    data: {
+      teacherId: teacher3Profile.id,
+      code: 'IITB-CS601',
+      name: 'Network Security & Cryptography',
+      department: 'Computer Science',
+      semester: 'Semester VI',
+      description: 'Symmetric and asymmetric encryption, RSA, AES, digital signatures, SSL/TLS, and cyber attack vectors.',
+    },
+  });
+
+  await prisma.teachingResource.createMany({
+    data: [
+      {
+        teacherId: teacher3Profile.id,
+        subjectId: subject3_1.id,
+        title: 'Cryptography & Public Key Infrastructure Notes',
+        description: 'Detailed mathematical background and algorithmic breakdown of RSA, Diffie-Hellman, and Elliptic Curve Cryptography.',
+        resourceType: ResourceType.NOTES,
+        fileUrl: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf',
+        fileType: 'pdf',
+      },
+      {
+        teacherId: teacher3Profile.id,
+        subjectId: subject3_1.id,
+        title: 'Cybersecurity Threats & Penetration Testing PPT',
+        description: 'Slides covering OWASP Top 10 vulnerabilities, buffer overflows, SQL injection, and defensive coding.',
+        resourceType: ResourceType.PPT,
+        fileUrl: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf',
+        fileType: 'pdf',
+      },
+      {
+        teacherId: teacher3Profile.id,
+        subjectId: subject3_1.id,
+        title: 'Network Security End-Sem Exam Question Bank',
+        description: 'Advanced numerical problem sets and theoretical question bank for Cryptography & Network Security.',
+        resourceType: ResourceType.QUESTION_BANK,
+        fileUrl: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf',
+        fileType: 'pdf',
+      },
+    ],
+  });
+
+  // Seed Research Publications
   await prisma.researchPublication.createMany({
     data: [
       {
+        teacherId: teacher1Profile.id,
         title: 'Optimization of Task Scheduling in Cloud Datacenters Using Hybrid Genetic Algorithm',
         authors: 'Prof. Ashwini Sawant, Dr. R. K. Sharma',
-        journalOrConference: 'IEEE Transactions on Cloud Computing / International Journal of Computer Applications',
+        journalOrConference: 'IEEE Transactions on Cloud Computing',
         year: 2023,
         doi: '10.1109/TCC.2023.1029384',
         category: PublicationCategory.JOURNAL_PUBLICATION,
@@ -129,75 +316,53 @@ async function main() {
         publisher: 'IEEE',
       },
       {
-        title: 'Security Enhancements in IoT Edge Architectures Using Lightweight Cryptography',
-        authors: 'Prof. Ashwini Sawant, M. V. Patil',
-        journalOrConference: 'International Conference on Smart Computing & Communication (ICSCC 2022)',
-        year: 2022,
-        doi: '10.1007/978-981-19-1234-5_12',
+        teacherId: teacher2Profile.id,
+        title: 'Deep Learning for Automated Medical Imaging Diagnostics',
+        authors: 'Dr. Rajesh Sharma, K. Patel',
+        journalOrConference: 'International Journal of Artificial Intelligence',
+        year: 2024,
+        doi: '10.1016/j.artint.2024.103982',
+        category: PublicationCategory.JOURNAL_PUBLICATION,
+        pdfUrl: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf',
+        publisher: 'Elsevier',
+      },
+      {
+        teacherId: teacher3Profile.id,
+        title: 'Post-Quantum Lattice-Based Key Exchange Protocols for IoT',
+        authors: 'Prof. Sunita Verma, A. Mehta',
+        journalOrConference: 'ACM Symposium on Information, Computer and Communications Security',
+        year: 2023,
+        doi: '10.1145/3576915.3582301',
         category: PublicationCategory.CONFERENCE_PAPER,
         pdfUrl: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf',
-        publisher: 'Springer',
+        publisher: 'ACM',
       },
     ],
-    skipDuplicates: true,
   });
 
-  // 6. Add FDPs & Workshops
-  await prisma.workshopFDP.createMany({
-    data: [
-      {
-        title: 'AICTE Training & Learning (ATAL) FDP on Machine Learning & Deep Learning Applications',
-        type: EventType.FDP,
-        role: EventRole.ATTENDED,
-        venue: 'IIT Bombay (Virtual Mode)',
-        startDate: new Date('2023-07-10'),
-        endDate: new Date('2023-07-15'),
-        description: 'One-week faculty development program covering Convolutional Neural Networks, Transformers, and PyTorch.',
-        certificateUrl: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf',
-      },
-      {
-        title: 'National Level Workshop on Hands-on Cloud Infrastructure with AWS & Docker',
-        type: EventType.WORKSHOP,
-        role: EventRole.ORGANIZED,
-        venue: 'Department of Computer Engineering',
-        startDate: new Date('2024-02-20'),
-        endDate: new Date('2024-02-22'),
-        description: 'Convenor and Lead Coordinator for 3-day student & faculty hands-on cloud workshop.',
-        certificateUrl: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf',
-      },
-    ],
-    skipDuplicates: true,
-  });
-
-  // 7. Add Blog Post
-  await prisma.blogPost.upsert({
-    where: { slug: 'effective-study-strategies-for-data-structures-exam' },
-    update: {},
-    create: {
+  // Seed Blog Post
+  await prisma.blogPost.create({
+    data: {
+      teacherId: teacher1Profile.id,
       title: 'Effective Study Strategies for Data Structures & Algorithms Exams',
       slug: 'effective-study-strategies-for-data-structures-exam',
-      summary: 'Essential tips for computer engineering students to master trees, graphs, and algorithmic problem-solving before university semester exams.',
+      summary: 'Essential tips for computer engineering students to master trees, graphs, and algorithmic problem-solving.',
       content: `
 # Mastering Data Structures & Algorithms: A Guide for Students
 
-Data Structures & Algorithms (DSA) form the core backbone of Computer Engineering and technical interviews. Here are key strategies to ace your semester exams and build long-term retention:
+Data Structures & Algorithms (DSA) form the core backbone of Computer Engineering and technical interviews. Here are key strategies to ace your semester exams:
 
 ## 1. Focus on Visualizing Pointer Manipulations
-Whether working with singly linked lists, doubly linked lists, or binary search trees, draw pointer diagrams on paper before attempting code implementation.
+Draw pointer diagrams on paper before attempting code implementation for linked lists and trees.
 
-## 2. Master Standard Traversal Pseudocode
-Ensure you can write BFS, DFS, Pre-order, In-order, and Post-order tree traversals without looking at references.
-
-## 3. Practice Asymptotic Time Complexity Analysis
-Always calculate Big-O time and space complexity for your loops, recursive calls, and hash map lookups.
-
-Good luck with your preparation!
+## 2. Practice Asymptotic Time Complexity Analysis
+Always calculate Big-O time and space complexity for your algorithms.
       `,
       coverImage: 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&q=80&w=800',
       isPublished: true,
-      viewCount: 142,
+      viewCount: 250,
       estimatedReadingMinutes: 3,
-      totalEngagementSeconds: 2840,
+      totalEngagementSeconds: 5000,
     },
   });
 

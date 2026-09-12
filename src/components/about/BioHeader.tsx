@@ -7,7 +7,8 @@ interface BioProps {
     fullName: string;
     designation: string;
     department: string;
-    institution: string;
+    university?: string;
+    institution?: string;
     profileImageUrl: string;
     bioText: string;
     phdSummary?: string | null;
@@ -32,7 +33,7 @@ export default function BioHeader({ profile }: BioProps) {
             About {profile.fullName}
           </h1>
           <p className="text-lg text-sky-700 font-semibold mt-1">
-            {profile.designation} • {profile.department}
+            {profile.designation} • {profile.department} {profile.university ? `• ${profile.university}` : ''}
           </p>
         </div>
 
@@ -51,7 +52,7 @@ export default function BioHeader({ profile }: BioProps) {
                 {profile.bioText}
               </p>
               <p className="text-slate-600 leading-relaxed text-sm">
-                With a deep passion for teaching complex computer engineering concepts, Prof. Sawant emphasizes problem-solving skills, hands-on lab experiments, and continuous curriculum enhancement. She actively collaborates with industry professionals to provide students with real-world exposure.
+                With a deep passion for teaching complex computer engineering concepts, {profile.fullName} emphasizes problem-solving skills, hands-on lab experiments, and continuous curriculum enhancement. She actively collaborates with industry professionals to provide students with real-world exposure.
               </p>
             </div>
 
@@ -91,7 +92,7 @@ export default function BioHeader({ profile }: BioProps) {
               {/* Profile Image */}
               <div className="relative w-full h-64 rounded-xl overflow-hidden border-2 border-slate-100 shadow-inner">
                 <Image
-                  src={profile.profileImageUrl}
+                  src={profile.profileImageUrl || '/images/profile.jpg'}
                   alt={profile.fullName}
                   fill
                   className="object-cover object-top"
