@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { ShieldCheck, Users, GraduationCap, Building, BookOpen, Plus, Trash2, Edit, RefreshCw, LogOut, CheckCircle, AlertCircle, FileText, Presentation, FileQuestion } from 'lucide-react';
+import { ShieldCheck, Users, GraduationCap, Building, BookOpen, Plus, Trash2, Edit, RefreshCw, LogOut, CheckCircle, AlertCircle, FileText, Presentation, FileQuestion, UserPlus, Check, X, Clock } from 'lucide-react';
 
 interface TeacherItem {
   id: string;
@@ -14,6 +14,19 @@ interface TeacherItem {
   contactEmail: string;
   user?: { email: string; createdAt: string };
   _count: { subjects: number; resources: number; publications: number };
+}
+
+interface TeacherRequestItem {
+  id: string;
+  name: string;
+  email: string;
+  university: string;
+  department: string;
+  designation: string;
+  expertise: string;
+  note?: string;
+  status: 'PENDING' | 'APPROVED' | 'REJECTED';
+  createdAt: string;
 }
 
 interface StatsData {
@@ -32,6 +45,7 @@ export default function AdminDashboardPage() {
   const router = useRouter();
   const [stats, setStats] = useState<StatsData | null>(null);
   const [teachers, setTeachers] = useState<TeacherItem[]>([]);
+  const [requests, setRequests] = useState<TeacherRequestItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -57,23 +71,19 @@ export default function AdminDashboardPage() {
     setLoading(true);
     setError(null);
     try {
-      const [statsRes, teachersRes] = await Promise.all([
+      const [statsRes, teachersRes, requestsRes] = await Promise.all([
         fetch('/api/admin/stats'),
         fetch('/api/admin/teachers'),
+        fetch('/api/teacher-requests'),
       ]);
 
       const statsJson = await statsRes.json();
       const teachersJson = await teachersRes.json();
+      const requestsJson = await requestsRes.json();
 
-      if (statsJson.success) {
-        setStats(statsJson.stats);
-      } else {
-        setError(statsJson.error || 'Failed to load stats');
-      }
-
-      if (teachersJson.success) {
-        setTeachers(teachersJson.teachers);
-      }
+      if (statsJson.success) setStats(statsJson.stats);
+      if (teachersJson.success) setTeachers(teachersJson.teachers);
+      if (requestsJson.success) setRequests(requestsJson.requests);
     } catch (err) {
       console.error('Fetch admin data error:', err);
       setError('Failed to connect to admin endpoints.');
@@ -116,6 +126,44 @@ export default function AdminDashboardPage() {
     }
   };
 
+  const handleApproveRequest = async (requestId: string, name: string) => {
+    setActionSuccess(null);
+    try {
+      const res = await fetch('/api/admin/teacher-requests/approve', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ requestId, action: 'APPROVE' }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setActionSuccess(`Request approved! Teacher account created for ${name} (password: teacher123)`);
+        fetchDashboardData();
+      } else {
+        alert(data.error || 'Failed to approve request');
+      }
+    } catch (err) {
+      alert('Error approving teacher request');
+    }
+  };
+
+  const handleRejectRequest = async (requestId: string) => {
+    if (!confirm('Decline this teacher request?')) return;
+    try {
+      const res = await fetch('/api/admin/teacher-requests/approve', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ requestId, action: 'REJECT' }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setActionSuccess('Teacher request declined.');
+        fetchDashboardData();
+      }
+    } catch (err) {
+      alert('Error declining request');
+    }
+  };
+
   const handleDeleteTeacher = async (id: string, name: string) => {
     if (!confirm(`Are you sure you want to remove ${name} from Teachers-Community?`)) return;
     try {
@@ -137,6 +185,8 @@ export default function AdminDashboardPage() {
     router.push('/login');
     router.refresh();
   };
+
+  const pendingRequests = requests.filter(r => r.status === 'PENDING');
 
   if (loading) {
     return (
@@ -165,7 +215,7 @@ export default function AdminDashboardPage() {
                 Teachers-Community Admin Portal
               </h1>
               <p className="text-xs text-slate-400">
-                Monitor platform growth, manage university teachers, and oversee content integrity.
+                Monitor platform growth, review incoming teacher join requests, and manage accounts.
               </p>
             </div>
           </div>
@@ -212,12 +262,12 @@ export default function AdminDashboardPage() {
           </div>
 
           <div className="bg-slate-900 border border-slate-800 p-5 rounded-2xl space-y-2">
-            <div className="flex items-center justify-between text-emerald-400">
-              <GraduationCap className="w-5 h-5" />
-              <span className="text-[10px] font-bold uppercase tracking-wider bg-emerald-500/10 px-2 py-0.5 rounded">Enrolled</span>
+            <div className="flex items-center justify-between text-amber-400">
+              <UserPlus className="w-5 h-5" />
+              <span className="text-[10px] font-bold uppercase tracking-wider bg-amber-500/10 px-2 py-0.5 rounded">Pending</span>
             </div>
-            <div className="text-3xl font-black text-white">{stats?.totalStudents || 0}</div>
-            <div className="text-xs text-slate-400 font-medium">Student Members</div>
+            <div className="text-3xl font-black text-white">{pendingRequests.length}</div>
+            <div className="text-xs text-slate-400 font-medium">Teacher Join Requests</div>
           </div>
 
           <div className="bg-slate-900 border border-slate-800 p-5 rounded-2xl space-y-2">
@@ -230,53 +280,69 @@ export default function AdminDashboardPage() {
           </div>
 
           <div className="bg-slate-900 border border-slate-800 p-5 rounded-2xl space-y-2">
-            <div className="flex items-center justify-between text-amber-400">
+            <div className="flex items-center justify-between text-emerald-400">
               <BookOpen className="w-5 h-5" />
-              <span className="text-[10px] font-bold uppercase tracking-wider bg-amber-500/10 px-2 py-0.5 rounded">Uploaded</span>
+              <span className="text-[10px] font-bold uppercase tracking-wider bg-emerald-500/10 px-2 py-0.5 rounded">Uploaded</span>
             </div>
             <div className="text-3xl font-black text-white">{stats?.totalResources || 0}</div>
             <div className="text-xs text-slate-400 font-medium">Notes, PPTs & Q-Banks</div>
           </div>
         </div>
 
-        {/* Breakdown of Resources */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="bg-slate-900/60 border border-slate-800 p-4 rounded-2xl flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 rounded-xl bg-blue-500/10 text-blue-400 flex items-center justify-center">
-                <FileText className="w-5 h-5" />
+        {/* Section: Pending Teacher Join Requests */}
+        {pendingRequests.length > 0 && (
+          <div className="bg-gradient-to-r from-amber-950/40 via-slate-900 to-slate-900 border border-amber-500/30 rounded-3xl p-6 space-y-4 shadow-xl">
+            <div className="flex items-center justify-between border-b border-amber-500/20 pb-3">
+              <div className="flex items-center space-x-2">
+                <UserPlus className="w-5 h-5 text-amber-400" />
+                <h2 className="text-lg font-bold text-white">Pending Teacher Profile Requests ({pendingRequests.length})</h2>
               </div>
-              <div>
-                <div className="text-xs text-slate-400">Lecture Notes</div>
-                <div className="text-lg font-bold text-white">{stats?.notesCount || 0} Files</div>
-              </div>
+              <span className="text-xs text-amber-300 font-semibold bg-amber-500/10 px-3 py-1 rounded-full border border-amber-500/20">
+                Review & 1-Click Approve
+              </span>
             </div>
-          </div>
 
-          <div className="bg-slate-900/60 border border-slate-800 p-4 rounded-2xl flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-400 flex items-center justify-center">
-                <Presentation className="w-5 h-5" />
-              </div>
-              <div>
-                <div className="text-xs text-slate-400">PPT Presentations</div>
-                <div className="text-lg font-bold text-white">{stats?.pptCount || 0} Slides</div>
-              </div>
-            </div>
-          </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {pendingRequests.map((req) => (
+                <div key={req.id} className="bg-slate-950 border border-slate-800 rounded-2xl p-4 space-y-3">
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <h3 className="text-sm font-bold text-white">{req.name}</h3>
+                      <div className="text-xs text-sky-400 font-medium">{req.designation} • {req.department}</div>
+                      <div className="text-[11px] text-amber-400 font-semibold">{req.university}</div>
+                      <div className="text-[10px] text-slate-400 font-mono mt-0.5">{req.email}</div>
+                    </div>
+                    <span className="text-[10px] text-slate-500 font-mono">
+                      {new Date(req.createdAt).toLocaleDateString()}
+                    </span>
+                  </div>
 
-          <div className="bg-slate-900/60 border border-slate-800 p-4 rounded-2xl flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 rounded-xl bg-purple-500/10 text-purple-400 flex items-center justify-center">
-                <FileQuestion className="w-5 h-5" />
-              </div>
-              <div>
-                <div className="text-xs text-slate-400">Question Banks</div>
-                <div className="text-lg font-bold text-white">{stats?.questionBankCount || 0} Sets</div>
-              </div>
+                  <div className="text-[11px] bg-slate-900 p-2.5 rounded-xl border border-slate-800 text-slate-300">
+                    <strong>Expertise:</strong> {req.expertise}
+                    {req.note && <div className="mt-1 text-slate-400 italic">&quot;{req.note}&quot;</div>}
+                  </div>
+
+                  <div className="flex items-center space-x-2 pt-1">
+                    <button
+                      onClick={() => handleApproveRequest(req.id, req.name)}
+                      className="flex-1 py-2 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-md transition-all flex items-center justify-center space-x-1"
+                    >
+                      <Check className="w-4 h-4" />
+                      <span>Approve & Create Account</span>
+                    </button>
+
+                    <button
+                      onClick={() => handleRejectRequest(req.id)}
+                      className="py-2 px-3 rounded-xl bg-slate-800 hover:bg-rose-600/20 text-slate-400 hover:text-rose-400 font-bold text-xs transition-all border border-slate-700"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
-        </div>
+        )}
 
         {/* Teachers Management Table */}
         <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 space-y-6 shadow-xl">

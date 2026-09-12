@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import Link from 'next/link';
 import { ShieldCheck, UserCheck, GraduationCap, Lock, Mail, User, Building, BookOpen, AlertCircle, CheckCircle, ArrowRight, RefreshCw } from 'lucide-react';
 
 type RoleTab = 'ADMIN' | 'TEACHER' | 'STUDENT';
@@ -334,7 +335,7 @@ function LoginContent() {
         </form>
       )}
 
-      {/* Bottom Toggle for Student Mode */}
+      {/* Bottom Toggle for Student / Teacher Request */}
       {activeTab === 'STUDENT' && (
         <div className="pt-2 text-center text-xs text-slate-400 border-t border-slate-700/60">
           {isRegisterMode ? (
@@ -360,6 +361,20 @@ function LoginContent() {
               </button>
             </span>
           )}
+        </div>
+      )}
+
+      {activeTab === 'TEACHER' && (
+        <div className="pt-2 text-center text-xs text-slate-400 border-t border-slate-700/60">
+          <span>
+            New university teacher?{' '}
+            <Link
+              href="/teachers/join-request"
+              className="text-sky-400 hover:underline font-semibold"
+            >
+              Send Request to Admin to Create Profile
+            </Link>
+          </span>
         </div>
       )}
 
