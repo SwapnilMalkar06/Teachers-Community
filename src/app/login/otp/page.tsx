@@ -21,6 +21,35 @@ function OTPLoginContent() {
   const [success, setSuccess] = useState<string | null>(null);
   const [teacherName, setTeacherName] = useState<string | null>(null);
 
+  const [resending, setResending] = useState(false);
+
+  const handleResendOTP = async () => {
+    if (!email) {
+      setError('Please enter your approved email address to send or resend OTP.');
+      return;
+    }
+    setResending(true);
+    setError(null);
+    try {
+      const res = await fetch('/api/auth/resend-otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setSuccess(`Fresh 6-digit OTP dispatched to mobile number ${data.phone}! (Provider: ${data.provider})`);
+        if (data.otp) setOtp(data.otp);
+      } else {
+        setError(data.error || 'Failed to dispatch OTP.');
+      }
+    } catch (err) {
+      setError('Network error while requesting OTP.');
+    } finally {
+      setResending(false);
+    }
+  };
+
   // Quick Demo fill helper
   const handleAutofillDemo = async () => {
     try {
@@ -173,7 +202,17 @@ function OTPLoginContent() {
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-slate-300 mb-1">6-Digit SMS OTP Code *</label>
+            <div className="flex items-center justify-between mb-1">
+              <label className="block text-xs font-semibold text-slate-300">6-Digit SMS OTP Code *</label>
+              <button
+                type="button"
+                onClick={handleResendOTP}
+                disabled={resending}
+                className="text-[11px] font-semibold text-sky-400 hover:text-sky-300 underline disabled:opacity-50"
+              >
+                {resending ? 'Sending SMS...' : 'Resend OTP to Mobile'}
+              </button>
+            </div>
             <div className="relative">
               <Key className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
               <input
