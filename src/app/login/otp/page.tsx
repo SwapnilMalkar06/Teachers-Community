@@ -1,9 +1,9 @@
 'use client';
 
-import React, { useState, Suspense } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { KeyRound, ShieldCheck, Mail, Lock, CheckCircle, AlertCircle, ArrowLeft, ArrowRight, RefreshCw, Key } from 'lucide-react';
+import { KeyRound, ShieldCheck, Mail, Lock, CheckCircle, AlertCircle, ArrowLeft, ArrowRight, RefreshCw, Key, Sparkles } from 'lucide-react';
 
 function OTPLoginContent() {
   const router = useRouter();
@@ -20,6 +20,26 @@ function OTPLoginContent() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [teacherName, setTeacherName] = useState<string | null>(null);
+
+  // Quick Demo fill helper
+  const handleAutofillDemo = async () => {
+    try {
+      const res = await fetch('/api/teacher-requests');
+      const data = await res.json();
+      if (data.success && data.requests) {
+        const approved = data.requests.find((r: any) => r.status === 'APPROVED' && r.otp);
+        if (approved) {
+          setEmail(approved.email);
+          setOtp(approved.otp);
+          setSuccess(`Autofilled approved demo teacher: ${approved.email} (OTP: ${approved.otp})`);
+        } else {
+          alert('No approved teacher request with OTP found yet. Please approve a request on /admin/dashboard first!');
+        }
+      }
+    } catch (err) {
+      console.error('Autofill demo error:', err);
+    }
+  };
 
   const handleVerifyOTP = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -103,6 +123,23 @@ function OTPLoginContent() {
             : 'Create your new secure password to access your Teacher Dashboard.'}
         </p>
       </div>
+
+      {/* Demo Autofill Banner */}
+      {step === 1 && (
+        <div className="bg-sky-500/10 border border-sky-500/20 p-3 rounded-2xl flex items-center justify-between text-xs text-sky-300">
+          <div className="flex items-center space-x-2">
+            <Sparkles className="w-4 h-4 text-sky-400 shrink-0" />
+            <span>Testing OTP verification?</span>
+          </div>
+          <button
+            type="button"
+            onClick={handleAutofillDemo}
+            className="px-3 py-1 rounded-lg bg-sky-600 hover:bg-sky-500 text-white font-bold text-[11px] transition-all"
+          >
+            Autofill Approved OTP
+          </button>
+        </div>
+      )}
 
       {error && (
         <div className="p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-300 text-xs font-medium flex items-center space-x-2">

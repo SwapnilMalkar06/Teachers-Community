@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { ShieldCheck, Users, GraduationCap, Building, BookOpen, Plus, Trash2, Edit, RefreshCw, LogOut, CheckCircle, AlertCircle, FileText, Presentation, FileQuestion, UserPlus, Check, X, Clock } from 'lucide-react';
+import { ShieldCheck, Users, GraduationCap, Building, BookOpen, Plus, Trash2, Edit, RefreshCw, LogOut, CheckCircle, AlertCircle, FileText, Presentation, FileQuestion, UserPlus, Check, X, Clock, Key, Phone, Copy } from 'lucide-react';
 
 interface TeacherItem {
   id: string;
@@ -20,11 +20,13 @@ interface TeacherRequestItem {
   id: string;
   name: string;
   email: string;
+  phone?: string;
   university: string;
   department: string;
   designation: string;
   expertise: string;
   note?: string;
+  otp?: string;
   status: 'PENDING' | 'APPROVED' | 'REJECTED';
   createdAt: string;
 }
@@ -62,6 +64,9 @@ export default function AdminDashboardPage() {
   });
   const [submitting, setSubmitting] = useState(false);
   const [actionSuccess, setActionSuccess] = useState<string | null>(null);
+
+  // Approved OTP Modal state
+  const [approvedOtpInfo, setApprovedOtpInfo] = useState<{ name: string; email: string; phone: string; otp: string } | null>(null);
 
   useEffect(() => {
     fetchDashboardData();
@@ -128,6 +133,7 @@ export default function AdminDashboardPage() {
 
   const handleApproveRequest = async (requestId: string, name: string) => {
     setActionSuccess(null);
+    setApprovedOtpInfo(null);
     try {
       const res = await fetch('/api/admin/teacher-requests/approve', {
         method: 'POST',
@@ -136,7 +142,15 @@ export default function AdminDashboardPage() {
       });
       const data = await res.json();
       if (data.success) {
-        setActionSuccess(`Request approved! Teacher account created for ${name} (password: teacher123)`);
+        setActionSuccess(`Teacher request approved for ${name}!`);
+        if (data.otp && data.user) {
+          setApprovedOtpInfo({
+            name,
+            email: data.user.email,
+            phone: data.phone || '+91 98765 43210',
+            otp: data.otp,
+          });
+        }
         fetchDashboardData();
       } else {
         alert(data.error || 'Failed to approve request');
@@ -239,8 +253,54 @@ export default function AdminDashboardPage() {
           </div>
         </div>
 
+        {/* Approved OTP Callout Alert Box */}
+        {approvedOtpInfo && (
+          <div className="p-6 rounded-3xl bg-gradient-to-r from-emerald-950 via-slate-900 to-slate-900 border-2 border-emerald-500/40 text-emerald-100 space-y-3 shadow-2xl animate-in fade-in duration-300">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-2">
+                <CheckCircle className="w-6 h-6 text-emerald-400" />
+                <h3 className="text-base font-black text-white">Teacher Request Approved & SMS OTP Dispatched!</h3>
+              </div>
+              <button onClick={() => setApprovedOtpInfo(null)} className="text-slate-400 hover:text-white font-bold">✕</button>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2 text-xs">
+              <div className="bg-slate-950 p-3 rounded-2xl border border-slate-800">
+                <div className="text-slate-500 text-[10px]">Approved Teacher</div>
+                <div className="font-bold text-white">{approvedOtpInfo.name}</div>
+                <div className="text-[11px] text-sky-400 font-mono">{approvedOtpInfo.email}</div>
+              </div>
+
+              <div className="bg-slate-950 p-3 rounded-2xl border border-slate-800">
+                <div className="text-slate-500 text-[10px]">Recipient Phone Number</div>
+                <div className="font-bold text-white flex items-center space-x-1">
+                  <Phone className="w-3.5 h-3.5 text-emerald-400" />
+                  <span>{approvedOtpInfo.phone}</span>
+                </div>
+              </div>
+
+              <div className="bg-slate-950 p-3 rounded-2xl border border-emerald-500/40 text-center">
+                <div className="text-amber-400 text-[10px] font-bold uppercase tracking-wider">Dispatched 6-Digit SMS OTP</div>
+                <div className="text-2xl font-black text-amber-300 font-mono tracking-widest">{approvedOtpInfo.otp}</div>
+              </div>
+            </div>
+
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-2 pt-2 border-t border-slate-800/80 text-xs text-slate-300">
+              <span>Teacher can now go to <strong className="text-amber-400 font-mono">/login/otp</strong> and enter email & OTP <strong className="text-amber-300 font-mono">{approvedOtpInfo.otp}</strong> to set password.</span>
+              <a
+                href={`/login/otp?email=${encodeURIComponent(approvedOtpInfo.email)}`}
+                target="_blank"
+                rel="noreferrer"
+                className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-md shrink-0 flex items-center space-x-1"
+              >
+                <span>Open First-Time OTP Setup Page</span>
+              </a>
+            </div>
+          </div>
+        )}
+
         {/* Action Alert */}
-        {actionSuccess && (
+        {actionSuccess && !approvedOtpInfo && (
           <div className="p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-300 text-xs font-semibold flex items-center justify-between">
             <div className="flex items-center space-x-2">
               <CheckCircle className="w-4 h-4 text-emerald-400" />
@@ -298,7 +358,7 @@ export default function AdminDashboardPage() {
                 <h2 className="text-lg font-bold text-white">Pending Teacher Profile Requests ({pendingRequests.length})</h2>
               </div>
               <span className="text-xs text-amber-300 font-semibold bg-amber-500/10 px-3 py-1 rounded-full border border-amber-500/20">
-                Review & 1-Click Approve
+                Review & Dispatch SMS OTP
               </span>
             </div>
 
@@ -310,7 +370,7 @@ export default function AdminDashboardPage() {
                       <h3 className="text-sm font-bold text-white">{req.name}</h3>
                       <div className="text-xs text-sky-400 font-medium">{req.designation} • {req.department}</div>
                       <div className="text-[11px] text-amber-400 font-semibold">{req.university}</div>
-                      <div className="text-[10px] text-slate-400 font-mono mt-0.5">{req.email}</div>
+                      <div className="text-[10px] text-slate-400 font-mono mt-0.5">{req.email} • {req.phone || '+91 98765 43210'}</div>
                     </div>
                     <span className="text-[10px] text-slate-500 font-mono">
                       {new Date(req.createdAt).toLocaleDateString()}
@@ -328,7 +388,7 @@ export default function AdminDashboardPage() {
                       className="flex-1 py-2 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-md transition-all flex items-center justify-center space-x-1"
                     >
                       <Check className="w-4 h-4" />
-                      <span>Approve & Create Account</span>
+                      <span>Approve & Dispatch SMS OTP</span>
                     </button>
 
                     <button

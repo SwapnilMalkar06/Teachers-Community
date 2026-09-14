@@ -230,9 +230,9 @@ model BlogPost {
   teacher                 TeacherProfile? @relation(fields: [teacherId], references: [id], onDelete: Cascade)
   title                   String
   slug                    String          @unique
-  content                 String          @db.Text
+  content                 String          @db.LongText
   summary                 String          @db.Text
-  coverImage              String?
+  coverImage              String?         @db.LongText
   isPublished             Boolean         @default(true)
   viewCount               Int             @default(0)
   estimatedReadingMinutes Int             @default(3)
