@@ -105,6 +105,18 @@ export default function Navbar() {
               <span>Notes, PPTs & Q-Banks</span>
             </Link>
 
+            <Link
+              href="/blog"
+              className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center space-x-1.5 ${
+                isActive('/blog')
+                  ? 'text-emerald-400 bg-emerald-500/10 border border-emerald-500/20'
+                  : 'text-slate-300 hover:text-white hover:bg-slate-900'
+              }`}
+            >
+              <BookOpen className="w-3.5 h-3.5 text-emerald-400" />
+              <span>Faculty Blogs</span>
+            </Link>
+
             {/* Role-based Dashboard or Login Link */}
             {session ? (
               <div className="flex items-center space-x-2 pl-2">

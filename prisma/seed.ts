@@ -340,30 +340,80 @@ async function main() {
     ],
   });
 
-  // Seed Blog Post
-  await prisma.blogPost.create({
-    data: {
-      teacherId: teacher1Profile.id,
-      title: 'Effective Study Strategies for Data Structures & Algorithms Exams',
-      slug: 'effective-study-strategies-for-data-structures-exam',
-      summary: 'Essential tips for computer engineering students to master trees, graphs, and algorithmic problem-solving.',
-      content: `
-# Mastering Data Structures & Algorithms: A Guide for Students
+  // Seed Blog Posts
+  await prisma.blogPost.createMany({
+    data: [
+      {
+        teacherId: teacher1Profile.id,
+        title: 'Effective Study Strategies for Data Structures & Algorithms Exams',
+        slug: 'effective-study-strategies-for-data-structures-exam',
+        summary: 'Essential tips for computer engineering students to master trees, graphs, and algorithmic problem-solving.',
+        content: `
+<h2>Mastering Data Structures & Algorithms: A Guide for Students</h2>
+<p>Data Structures & Algorithms (DSA) form the core backbone of Computer Engineering and technical placement interviews. Here are key strategies to ace your semester exams:</p>
 
-Data Structures & Algorithms (DSA) form the core backbone of Computer Engineering and technical interviews. Here are key strategies to ace your semester exams:
+<h3>1. Focus on Visualizing Pointer Manipulations</h3>
+<p>Draw pointer diagrams on paper before attempting code implementation for linked lists, binary trees, and dynamic arrays.</p>
 
-## 1. Focus on Visualizing Pointer Manipulations
-Draw pointer diagrams on paper before attempting code implementation for linked lists and trees.
+<h3>2. Practice Asymptotic Time Complexity Analysis</h3>
+<p>Always calculate Big-O time and space complexity for your algorithms. Focus on comparing worst-case, average-case, and best-case complexities.</p>
 
-## 2. Practice Asymptotic Time Complexity Analysis
-Always calculate Big-O time and space complexity for your algorithms.
-      `,
-      coverImage: 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&q=80&w=800',
-      isPublished: true,
-      viewCount: 250,
-      estimatedReadingMinutes: 3,
-      totalEngagementSeconds: 5000,
-    },
+<h3>3. Solve Previous Years Question Papers</h3>
+<p>Analyze previous university question papers to identify recurring patterns in 10-mark questions like AVL tree rotations, Dijkstra algorithm, and BFS/DFS graph traversals.</p>
+        `,
+        coverImage: 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&q=80&w=800',
+        isPublished: true,
+        viewCount: 250,
+        estimatedReadingMinutes: 3,
+        totalEngagementSeconds: 5000,
+      },
+      {
+        teacherId: teacher2Profile.id,
+        title: 'How Machine Learning is Transforming Academic Research in 2026',
+        slug: 'how-machine-learning-is-transforming-academic-research-in-2026',
+        summary: 'An exploration of modern AI tools, neural networks, and automated data processing techniques for engineering students.',
+        content: `
+<h2>The Evolution of Machine Learning in Higher Education</h2>
+<p>Artificial Intelligence and Machine Learning are no longer futuristic concepts—they are active tools transforming how we conduct scientific research, process big data, and build intelligent applications.</p>
+
+<h3>Key Areas of Research Acceleration</h3>
+<ul>
+  <li><strong>Automated Data Analysis:</strong> Neural networks can process massive datasets in seconds.</li>
+  <li><strong>Natural Language Understanding:</strong> Summarizing research papers and extracting citations automatically.</li>
+  <li><strong>Computer Vision:</strong> Automated medical diagnostics and satellite imagery mapping.</li>
+</ul>
+
+<p>For students interested in entering the field of AI, start by mastering Linear Algebra, Python, NumPy, and PyTorch fundamentals!</p>
+        `,
+        coverImage: 'https://images.unsplash.com/photo-1555949963-ff9fe0c870eb?auto=format&fit=crop&q=80&w=800',
+        isPublished: true,
+        viewCount: 420,
+        estimatedReadingMinutes: 4,
+        totalEngagementSeconds: 8400,
+      },
+      {
+        teacherId: teacher3Profile.id,
+        title: 'Cybersecurity 101: Essential Security Habits for Engineering Students',
+        slug: 'cybersecurity-101-essential-security-habits',
+        summary: 'Learn about encryption, secure coding practices, API security, and protection against common web vulnerabilities.',
+        content: `
+<h2>Why Every Engineer Needs Security Awareness</h2>
+<p>In today's interconnected digital ecosystem, cybersecurity is not just the responsibility of security engineers—every software developer must write secure code by default.</p>
+
+<h3>Top Security Best Practices</h3>
+<ol>
+  <li><strong>Never Hardcode API Keys or Passwords:</strong> Use environment variables and secrets managers.</li>
+  <li><strong>Sanitize User Inputs:</strong> Protect your web applications against SQL Injection and Cross-Site Scripting (XSS).</li>
+  <li><strong>Enforce HTTPS & Strong Cryptography:</strong> Always use TLS encryption and salted password hashing (e.g., Argon2 or bcrypt).</li>
+</ol>
+        `,
+        coverImage: 'https://images.unsplash.com/photo-1563986768609-322da13575f3?auto=format&fit=crop&q=80&w=800',
+        isPublished: true,
+        viewCount: 310,
+        estimatedReadingMinutes: 5,
+        totalEngagementSeconds: 6200,
+      }
+    ]
   });
 
   console.log('Database seeding finished successfully!');
