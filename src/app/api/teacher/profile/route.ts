@@ -16,9 +16,9 @@ export async function GET() {
       include: {
         subjects: true,
         resources: { include: { subject: true } },
-        publications: true,
-        workshops: true,
-        certificates: true,
+        publications: { orderBy: { year: 'desc' } },
+        workshops: { orderBy: { startDate: 'desc' } },
+        certificates: { orderBy: { issueDate: 'desc' } },
         education: { orderBy: { createdAt: 'desc' } },
         experience: { orderBy: { createdAt: 'desc' } },
       },

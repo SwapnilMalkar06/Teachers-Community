@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { UserCheck, BookOpen, Plus, Trash2, Edit, Save, LogOut, FileText, RefreshCw, CheckCircle, AlertCircle, PenTool, Eye, Clock, Upload, GraduationCap, Briefcase, Award, X } from 'lucide-react';
+import { UserCheck, BookOpen, Plus, Trash2, Edit, Save, LogOut, FileText, RefreshCw, CheckCircle, AlertCircle, PenTool, Eye, Clock, Upload, GraduationCap, Briefcase, Award, X, FileBadge, Calendar, ExternalLink } from 'lucide-react';
 import BlogRichEditor, { compressImageFile } from '@/components/blog/BlogRichEditor';
 
 export interface EducationData {
@@ -19,6 +19,40 @@ export interface ExperienceData {
   organization: string;
   period: string;
   description?: string | null;
+}
+
+export interface PublicationData {
+  id: string;
+  title: string;
+  authors: string;
+  journalOrConference: string;
+  year: number;
+  doi?: string | null;
+  category: 'PHD_THESIS' | 'JOURNAL_PUBLICATION' | 'CONFERENCE_PAPER';
+  pdfUrl?: string | null;
+  publisher?: string | null;
+}
+
+export interface WorkshopData {
+  id: string;
+  title: string;
+  type: 'FDP' | 'WORKSHOP' | 'SEMINAR' | 'STTP';
+  role: 'ATTENDED' | 'ORGANIZED' | 'RESOURCE_PERSON';
+  venue: string;
+  startDate: string;
+  endDate?: string | null;
+  description?: string | null;
+  certificateUrl?: string | null;
+}
+
+export interface CertificateData {
+  id: string;
+  title: string;
+  issuingOrganization: string;
+  issueDate: string;
+  credentialId?: string | null;
+  credentialUrl?: string | null;
+  imageUrl?: string | null;
 }
 
 interface TeacherProfileData {
@@ -45,6 +79,9 @@ interface TeacherProfileData {
   }>;
   education?: EducationData[];
   experience?: ExperienceData[];
+  publications?: PublicationData[];
+  workshops?: WorkshopData[];
+  certificates?: CertificateData[];
 }
 
 interface BlogPostData {
@@ -66,7 +103,7 @@ export default function TeacherDashboardPage() {
   const [profile, setProfile] = useState<TeacherProfileData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'RESOURCES' | 'BLOGS' | 'PROFILE' | 'ACADEMIC_TIMELINES'>('BLOGS');
+  const [activeTab, setActiveTab] = useState<'RESOURCES' | 'BLOGS' | 'PROFILE' | 'ACADEMIC_TIMELINES' | 'PUBLICATIONS' | 'WORKSHOPS_CERTIFICATES'>('BLOGS');
 
   // Education state
   const [showEduModal, setShowEduModal] = useState(false);
@@ -77,6 +114,49 @@ export default function TeacherDashboardPage() {
   const [showExpModal, setShowExpModal] = useState(false);
   const [savingExp, setSavingExp] = useState(false);
   const [expForm, setExpForm] = useState({ id: '', role: '', organization: '', period: '', description: '' });
+
+  // Publication state
+  const [showPubModal, setShowPubModal] = useState(false);
+  const [savingPub, setSavingPub] = useState(false);
+  const [pubForm, setPubForm] = useState({
+    id: '',
+    title: '',
+    authors: '',
+    journalOrConference: '',
+    year: new Date().getFullYear(),
+    doi: '',
+    category: 'JOURNAL_PUBLICATION' as 'PHD_THESIS' | 'JOURNAL_PUBLICATION' | 'CONFERENCE_PAPER',
+    pdfUrl: '',
+    publisher: '',
+  });
+
+  // Workshop state
+  const [showWrkModal, setShowWrkModal] = useState(false);
+  const [savingWrk, setSavingWrk] = useState(false);
+  const [wrkForm, setWrkForm] = useState({
+    id: '',
+    title: '',
+    type: 'FDP' as 'FDP' | 'WORKSHOP' | 'SEMINAR' | 'STTP',
+    role: 'ATTENDED' as 'ATTENDED' | 'ORGANIZED' | 'RESOURCE_PERSON',
+    venue: '',
+    startDate: '',
+    endDate: '',
+    description: '',
+    certificateUrl: '',
+  });
+
+  // Certificate state
+  const [showCertModal, setShowCertModal] = useState(false);
+  const [savingCert, setSavingCert] = useState(false);
+  const [certForm, setCertForm] = useState({
+    id: '',
+    title: '',
+    issuingOrganization: '',
+    issueDate: '',
+    credentialId: '',
+    credentialUrl: '',
+    imageUrl: '',
+  });
 
   // Teacher Blogs state
   const [blogs, setBlogs] = useState<BlogPostData[]>([]);
@@ -227,6 +307,214 @@ export default function TeacherDashboardPage() {
       }
     } catch (err) {
       alert('Error deleting experience entry');
+    }
+  };
+
+  // Handlers for Publication
+  const openCreatePubModal = () => {
+    setPubForm({
+      id: '',
+      title: '',
+      authors: profile?.fullName || '',
+      journalOrConference: '',
+      year: new Date().getFullYear(),
+      doi: '',
+      category: 'JOURNAL_PUBLICATION',
+      pdfUrl: '',
+      publisher: '',
+    });
+    setShowPubModal(true);
+  };
+
+  const openEditPubModal = (item: PublicationData) => {
+    setPubForm({
+      id: item.id,
+      title: item.title,
+      authors: item.authors,
+      journalOrConference: item.journalOrConference,
+      year: item.year,
+      doi: item.doi || '',
+      category: item.category,
+      pdfUrl: item.pdfUrl || '',
+      publisher: item.publisher || '',
+    });
+    setShowPubModal(true);
+  };
+
+  const handleSavePub = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSavingPub(true);
+    try {
+      const method = pubForm.id ? 'PUT' : 'POST';
+      const res = await fetch('/api/teacher/publications', {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(pubForm),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setShowPubModal(false);
+        fetchTeacherProfile();
+      } else {
+        alert(data.error || 'Failed to save publication');
+      }
+    } catch (err) {
+      alert('Error saving publication');
+    } finally {
+      setSavingPub(false);
+    }
+  };
+
+  const handleDeletePub = async (id: string, title: string) => {
+    if (!confirm(`Are you sure you want to delete publication "${title}"?`)) return;
+    try {
+      const res = await fetch(`/api/teacher/publications?id=${id}`, { method: 'DELETE' });
+      const data = await res.json();
+      if (data.success) {
+        fetchTeacherProfile();
+      } else {
+        alert(data.error || 'Failed to delete publication');
+      }
+    } catch (err) {
+      alert('Error deleting publication');
+    }
+  };
+
+  // Handlers for Workshop
+  const openCreateWrkModal = () => {
+    const today = new Date().toISOString().split('T')[0];
+    setWrkForm({
+      id: '',
+      title: '',
+      type: 'FDP',
+      role: 'ATTENDED',
+      venue: '',
+      startDate: today,
+      endDate: '',
+      description: '',
+      certificateUrl: '',
+    });
+    setShowWrkModal(true);
+  };
+
+  const openEditWrkModal = (item: WorkshopData) => {
+    setWrkForm({
+      id: item.id,
+      title: item.title,
+      type: item.type,
+      role: item.role,
+      venue: item.venue,
+      startDate: item.startDate ? new Date(item.startDate).toISOString().split('T')[0] : '',
+      endDate: item.endDate ? new Date(item.endDate).toISOString().split('T')[0] : '',
+      description: item.description || '',
+      certificateUrl: item.certificateUrl || '',
+    });
+    setShowWrkModal(true);
+  };
+
+  const handleSaveWrk = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSavingWrk(true);
+    try {
+      const method = wrkForm.id ? 'PUT' : 'POST';
+      const res = await fetch('/api/teacher/workshops', {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(wrkForm),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setShowWrkModal(false);
+        fetchTeacherProfile();
+      } else {
+        alert(data.error || 'Failed to save workshop/FDP entry');
+      }
+    } catch (err) {
+      alert('Error saving workshop/FDP entry');
+    } finally {
+      setSavingWrk(false);
+    }
+  };
+
+  const handleDeleteWrk = async (id: string, title: string) => {
+    if (!confirm(`Are you sure you want to delete workshop/FDP entry "${title}"?`)) return;
+    try {
+      const res = await fetch(`/api/teacher/workshops?id=${id}`, { method: 'DELETE' });
+      const data = await res.json();
+      if (data.success) {
+        fetchTeacherProfile();
+      } else {
+        alert(data.error || 'Failed to delete workshop/FDP entry');
+      }
+    } catch (err) {
+      alert('Error deleting workshop/FDP entry');
+    }
+  };
+
+  // Handlers for Certificate
+  const openCreateCertModal = () => {
+    const today = new Date().toISOString().split('T')[0];
+    setCertForm({
+      id: '',
+      title: '',
+      issuingOrganization: '',
+      issueDate: today,
+      credentialId: '',
+      credentialUrl: '',
+      imageUrl: '',
+    });
+    setShowCertModal(true);
+  };
+
+  const openEditCertModal = (item: CertificateData) => {
+    setCertForm({
+      id: item.id,
+      title: item.title,
+      issuingOrganization: item.issuingOrganization,
+      issueDate: item.issueDate ? new Date(item.issueDate).toISOString().split('T')[0] : '',
+      credentialId: item.credentialId || '',
+      credentialUrl: item.credentialUrl || '',
+      imageUrl: item.imageUrl || '',
+    });
+    setShowCertModal(true);
+  };
+
+  const handleSaveCert = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSavingCert(true);
+    try {
+      const method = certForm.id ? 'PUT' : 'POST';
+      const res = await fetch('/api/teacher/certificates', {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(certForm),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setShowCertModal(false);
+        fetchTeacherProfile();
+      } else {
+        alert(data.error || 'Failed to save certificate');
+      }
+    } catch (err) {
+      alert('Error saving certificate');
+    } finally {
+      setSavingCert(false);
+    }
+  };
+
+  const handleDeleteCert = async (id: string, title: string) => {
+    if (!confirm(`Are you sure you want to delete certificate "${title}"?`)) return;
+    try {
+      const res = await fetch(`/api/teacher/certificates?id=${id}`, { method: 'DELETE' });
+      const data = await res.json();
+      if (data.success) {
+        fetchTeacherProfile();
+      } else {
+        alert(data.error || 'Failed to delete certificate');
+      }
+    } catch (err) {
+      alert('Error deleting certificate');
     }
   };
 
@@ -572,6 +860,30 @@ export default function TeacherDashboardPage() {
           >
             <GraduationCap className="w-4 h-4" />
             <span>Education & Work Experience ({profile.education?.length || 0} / {profile.experience?.length || 0})</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('PUBLICATIONS')}
+            className={`px-5 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center space-x-2 ${
+              activeTab === 'PUBLICATIONS'
+                ? 'bg-sky-600 text-white shadow-md'
+                : 'text-slate-400 hover:text-white hover:bg-slate-800'
+            }`}
+          >
+            <FileBadge className="w-4 h-4" />
+            <span>Research Publications ({profile.publications?.length || 0})</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('WORKSHOPS_CERTIFICATES')}
+            className={`px-5 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center space-x-2 ${
+              activeTab === 'WORKSHOPS_CERTIFICATES'
+                ? 'bg-sky-600 text-white shadow-md'
+                : 'text-slate-400 hover:text-white hover:bg-slate-800'
+            }`}
+          >
+            <Award className="w-4 h-4" />
+            <span>FDPs, Workshops & Certificates ({profile.workshops?.length || 0} / {profile.certificates?.length || 0})</span>
           </button>
         </div>
 
@@ -1024,6 +1336,265 @@ export default function TeacherDashboardPage() {
           </div>
         )}
 
+        {/* Tab 5: RESEARCH PUBLICATIONS */}
+        {activeTab === 'PUBLICATIONS' && (
+          <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-8 space-y-6 shadow-xl">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-slate-800 pb-4">
+              <div>
+                <h2 className="text-xl font-bold text-white flex items-center gap-2">
+                  <FileBadge className="w-5 h-5 text-sky-400" />
+                  <span>Research Publications & Scholarly Papers</span>
+                </h2>
+                <p className="text-xs text-slate-400">
+                  Manage your journal articles, IEEE/Springer conference papers, and doctoral thesis publications.
+                </p>
+              </div>
+
+              <button
+                onClick={openCreatePubModal}
+                className="inline-flex items-center space-x-2 px-4 py-2.5 rounded-xl bg-sky-600 hover:bg-sky-500 text-white font-bold text-xs transition-all shadow-md shadow-sky-950 self-start sm:self-auto"
+              >
+                <Plus className="w-4 h-4" />
+                <span>Add Research Paper</span>
+              </button>
+            </div>
+
+            {profile.publications && profile.publications.length > 0 ? (
+              <div className="space-y-4">
+                {profile.publications.map((item) => (
+                  <div key={item.id} className="bg-slate-950 border border-slate-800 rounded-2xl p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:border-sky-500/40 transition-all">
+                    <div className="space-y-1.5 flex-1">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className={`px-2.5 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider ${
+                          item.category === 'JOURNAL_PUBLICATION' ? 'bg-sky-500/10 text-sky-400 border border-sky-500/20' :
+                          item.category === 'CONFERENCE_PAPER' ? 'bg-indigo-500/10 text-indigo-400 border border-indigo-500/20' :
+                          'bg-amber-500/10 text-amber-400 border border-amber-500/20'
+                        }`}>
+                          {item.category === 'JOURNAL_PUBLICATION' ? 'Journal' : item.category === 'CONFERENCE_PAPER' ? 'Conference' : 'PhD Thesis'}
+                        </span>
+                        <span className="text-[11px] font-bold text-slate-400">{item.year}</span>
+                        {item.publisher && (
+                          <span className="text-[10px] px-2 py-0.5 rounded bg-slate-800 text-slate-300 font-semibold">{item.publisher}</span>
+                        )}
+                      </div>
+
+                      <h3 className="text-base font-extrabold text-white">{item.title}</h3>
+                      <p className="text-xs text-sky-300 font-medium">Authors: {item.authors}</p>
+                      <p className="text-xs text-slate-400">{item.journalOrConference}</p>
+                      {item.doi && <p className="text-[11px] text-slate-500 font-mono">DOI: {item.doi}</p>}
+                    </div>
+
+                    <div className="flex items-center space-x-2 shrink-0">
+                      {item.pdfUrl && (
+                        <a
+                          href={item.pdfUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="p-2 rounded-xl bg-slate-900 border border-slate-800 text-sky-400 hover:text-white hover:bg-sky-600 transition-colors"
+                          title="View PDF"
+                        >
+                          <ExternalLink className="w-4 h-4" />
+                        </a>
+                      )}
+
+                      <button
+                        onClick={() => openEditPubModal(item)}
+                        className="p-2 rounded-xl bg-slate-900 border border-slate-800 text-sky-400 hover:text-white hover:bg-sky-600 transition-colors"
+                        title="Edit Publication"
+                      >
+                        <Edit className="w-4 h-4" />
+                      </button>
+
+                      <button
+                        onClick={() => handleDeletePub(item.id, item.title)}
+                        className="p-2 rounded-xl bg-slate-900 border border-slate-800 text-rose-400 hover:text-white hover:bg-rose-600 transition-colors"
+                        title="Delete Publication"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="p-8 text-center bg-slate-950 rounded-2xl border border-slate-800/80 text-slate-400 text-xs">
+                No research publications added yet. Click &quot;Add Research Paper&quot; to populate your academic papers.
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Tab 6: FDPs, WORKSHOPS & CERTIFICATES */}
+        {activeTab === 'WORKSHOPS_CERTIFICATES' && (
+          <div className="space-y-10">
+            {/* Workshops & FDPs Section */}
+            <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-8 space-y-6 shadow-xl">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-slate-800 pb-4">
+                <div>
+                  <h2 className="text-xl font-bold text-white flex items-center gap-2">
+                    <Calendar className="w-5 h-5 text-indigo-400" />
+                    <span>FDPs, Workshops, Seminars & STTPs</span>
+                  </h2>
+                  <p className="text-xs text-slate-400">
+                    Manage events attended, organized, or delivered as a Resource Person.
+                  </p>
+                </div>
+
+                <button
+                  onClick={openCreateWrkModal}
+                  className="inline-flex items-center space-x-2 px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs transition-all shadow-md shadow-indigo-950 self-start sm:self-auto"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>Add Workshop / FDP</span>
+                </button>
+              </div>
+
+              {profile.workshops && profile.workshops.length > 0 ? (
+                <div className="space-y-4">
+                  {profile.workshops.map((item) => (
+                    <div key={item.id} className="bg-slate-950 border border-slate-800 rounded-2xl p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:border-indigo-500/40 transition-all">
+                      <div className="space-y-1.5 flex-1">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="px-2 py-0.5 rounded bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 text-[10px] font-bold">
+                            {item.type}
+                          </span>
+                          <span className="px-2 py-0.5 rounded bg-slate-800 text-slate-300 text-[10px] font-semibold">
+                            Role: {item.role}
+                          </span>
+                          <span className="text-[11px] text-slate-400">
+                            {new Date(item.startDate).toLocaleDateString()} {item.endDate ? `– ${new Date(item.endDate).toLocaleDateString()}` : ''}
+                          </span>
+                        </div>
+
+                        <h3 className="text-base font-extrabold text-white">{item.title}</h3>
+                        <p className="text-xs text-slate-300 font-medium">Venue: {item.venue}</p>
+                        {item.description && <p className="text-xs text-slate-400 pt-1">{item.description}</p>}
+                      </div>
+
+                      <div className="flex items-center space-x-2 shrink-0">
+                        {item.certificateUrl && (
+                          <a
+                            href={item.certificateUrl}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="p-2 rounded-xl bg-slate-900 border border-slate-800 text-indigo-400 hover:text-white hover:bg-indigo-600 transition-colors"
+                            title="View Certificate PDF"
+                          >
+                            <ExternalLink className="w-4 h-4" />
+                          </a>
+                        )}
+
+                        <button
+                          onClick={() => openEditWrkModal(item)}
+                          className="p-2 rounded-xl bg-slate-900 border border-slate-800 text-indigo-400 hover:text-white hover:bg-indigo-600 transition-colors"
+                          title="Edit Workshop"
+                        >
+                          <Edit className="w-4 h-4" />
+                        </button>
+
+                        <button
+                          onClick={() => handleDeleteWrk(item.id, item.title)}
+                          className="p-2 rounded-xl bg-slate-900 border border-slate-800 text-rose-400 hover:text-white hover:bg-rose-600 transition-colors"
+                          title="Delete Workshop"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="p-8 text-center bg-slate-950 rounded-2xl border border-slate-800/80 text-slate-400 text-xs">
+                  No workshops or FDP events added yet. Click &quot;Add Workshop / FDP&quot; to populate.
+                </div>
+              )}
+            </div>
+
+            {/* Certificates & Professional Credentials Section */}
+            <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-8 space-y-6 shadow-xl">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-slate-800 pb-4">
+                <div>
+                  <h2 className="text-xl font-bold text-white flex items-center gap-2">
+                    <Award className="w-5 h-5 text-amber-400" />
+                    <span>Certificates & Professional Credentials</span>
+                  </h2>
+                  <p className="text-xs text-slate-400">
+                    Manage certifications, licensing credentials, and online course certificates (Coursera, NPTEL, AWS, etc.).
+                  </p>
+                </div>
+
+                <button
+                  onClick={openCreateCertModal}
+                  className="inline-flex items-center space-x-2 px-4 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-500 text-white font-bold text-xs transition-all shadow-md shadow-amber-950 self-start sm:self-auto"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>Add Certificate</span>
+                </button>
+              </div>
+
+              {profile.certificates && profile.certificates.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {profile.certificates.map((item) => (
+                    <div key={item.id} className="bg-slate-950 border border-slate-800 rounded-2xl p-5 space-y-3 flex flex-col justify-between hover:border-amber-500/40 transition-all">
+                      <div className="space-y-1.5">
+                        <div className="flex items-center justify-between">
+                          <span className="px-2 py-0.5 rounded bg-amber-500/10 text-amber-400 border border-amber-500/20 text-[10px] font-bold">
+                            {item.issuingOrganization}
+                          </span>
+                          <span className="text-[11px] text-slate-400">
+                            Issued: {new Date(item.issueDate).toLocaleDateString()}
+                          </span>
+                        </div>
+
+                        <h3 className="text-base font-extrabold text-white">{item.title}</h3>
+                        {item.credentialId && (
+                          <p className="text-[11px] text-slate-400 font-mono">Credential ID: {item.credentialId}</p>
+                        )}
+                      </div>
+
+                      <div className="pt-2 border-t border-slate-800 flex items-center justify-between">
+                        {item.credentialUrl ? (
+                          <a
+                            href={item.credentialUrl}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="text-xs font-bold text-amber-400 hover:underline flex items-center space-x-1"
+                          >
+                            <span>Verify Credential</span>
+                            <ExternalLink className="w-3.5 h-3.5" />
+                          </a>
+                        ) : <span />}
+
+                        <div className="flex items-center space-x-2">
+                          <button
+                            onClick={() => openEditCertModal(item)}
+                            className="p-1.5 rounded-lg bg-slate-900 border border-slate-800 text-amber-400 hover:text-white hover:bg-amber-600 transition-colors"
+                            title="Edit Certificate"
+                          >
+                            <Edit className="w-4 h-4" />
+                          </button>
+
+                          <button
+                            onClick={() => handleDeleteCert(item.id, item.title)}
+                            className="p-1.5 rounded-lg bg-slate-900 border border-slate-800 text-rose-400 hover:text-white hover:bg-rose-600 transition-colors"
+                            title="Delete Certificate"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="p-8 text-center bg-slate-950 rounded-2xl border border-slate-800/80 text-slate-400 text-xs">
+                  No professional certificates added yet. Click &quot;Add Certificate&quot; to populate.
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
       </div>
 
       {/* Perfectly Sized & Responsive Write / Edit Blog Modal with Header & Footer Sticky Bar */}
@@ -1426,6 +1997,368 @@ export default function TeacherDashboardPage() {
                   className="px-5 py-2.5 rounded-xl bg-amber-600 text-white text-xs font-bold hover:bg-amber-500 shadow-md shadow-amber-900/30 disabled:opacity-50"
                 >
                   {savingExp ? 'Saving...' : 'Save Experience Entry'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Research Publication Modal */}
+      {showPubModal && (
+        <div className="fixed inset-0 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4 z-50">
+          <div className="w-full max-w-lg bg-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-8 space-y-6 shadow-2xl overflow-y-auto max-h-[90vh]">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-4">
+              <h3 className="text-lg font-bold text-white flex items-center space-x-2">
+                <FileBadge className="w-5 h-5 text-sky-400" />
+                <span>{pubForm.id ? 'Edit Research Paper' : 'Add Research Paper'}</span>
+              </h3>
+              <button onClick={() => setShowPubModal(false)} className="p-2 text-slate-400 hover:text-white">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSavePub} className="space-y-4">
+              <div>
+                <label className="block text-xs font-semibold text-slate-300 mb-1">Paper Title *</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. Adaptive Deep Reinforcement Learning for Cloud Task Scheduling"
+                  value={pubForm.title}
+                  onChange={(e) => setPubForm({ ...pubForm, title: e.target.value })}
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white focus:ring-2 focus:ring-sky-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-300 mb-1">Authors *</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. Prof. Ashwini Sawant, Dr. R. K. Sharma"
+                  value={pubForm.authors}
+                  onChange={(e) => setPubForm({ ...pubForm, authors: e.target.value })}
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white focus:ring-2 focus:ring-sky-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-300 mb-1">Journal or Conference Name *</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. IEEE Transactions on Cloud Computing"
+                  value={pubForm.journalOrConference}
+                  onChange={(e) => setPubForm({ ...pubForm, journalOrConference: e.target.value })}
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white focus:ring-2 focus:ring-sky-500"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-300 mb-1">Category *</label>
+                  <select
+                    value={pubForm.category}
+                    onChange={(e) => setPubForm({ ...pubForm, category: e.target.value as any })}
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white focus:ring-2 focus:ring-sky-500"
+                  >
+                    <option value="JOURNAL_PUBLICATION">Journal Publication</option>
+                    <option value="CONFERENCE_PAPER">Conference Paper</option>
+                    <option value="PHD_THESIS">PhD Thesis</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-300 mb-1">Year *</label>
+                  <input
+                    type="number"
+                    required
+                    value={pubForm.year}
+                    onChange={(e) => setPubForm({ ...pubForm, year: Number(e.target.value) })}
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white focus:ring-2 focus:ring-sky-500"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-300 mb-1">DOI (Optional)</label>
+                  <input
+                    type="text"
+                    placeholder="10.1109/TCC.2024.3389102"
+                    value={pubForm.doi}
+                    onChange={(e) => setPubForm({ ...pubForm, doi: e.target.value })}
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white focus:ring-2 focus:ring-sky-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-300 mb-1">Publisher (Optional)</label>
+                  <input
+                    type="text"
+                    placeholder="IEEE, Elsevier, Springer"
+                    value={pubForm.publisher}
+                    onChange={(e) => setPubForm({ ...pubForm, publisher: e.target.value })}
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white focus:ring-2 focus:ring-sky-500"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-300 mb-1">PDF Link URL (Optional)</label>
+                <input
+                  type="url"
+                  placeholder="https://example.com/paper.pdf"
+                  value={pubForm.pdfUrl}
+                  onChange={(e) => setPubForm({ ...pubForm, pdfUrl: e.target.value })}
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white focus:ring-2 focus:ring-sky-500"
+                />
+              </div>
+
+              <div className="pt-2 flex justify-end space-x-3 border-t border-slate-800">
+                <button
+                  type="button"
+                  onClick={() => setShowPubModal(false)}
+                  className="px-4 py-2.5 rounded-xl bg-slate-800 text-slate-300 text-xs font-semibold hover:bg-slate-700"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={savingPub}
+                  className="px-5 py-2.5 rounded-xl bg-sky-600 text-white text-xs font-bold hover:bg-sky-500 shadow-md shadow-sky-900/30 disabled:opacity-50"
+                >
+                  {savingPub ? 'Saving...' : 'Save Research Paper'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Workshop / FDP Modal */}
+      {showWrkModal && (
+        <div className="fixed inset-0 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4 z-50">
+          <div className="w-full max-w-lg bg-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-8 space-y-6 shadow-2xl overflow-y-auto max-h-[90vh]">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-4">
+              <h3 className="text-lg font-bold text-white flex items-center space-x-2">
+                <Calendar className="w-5 h-5 text-indigo-400" />
+                <span>{wrkForm.id ? 'Edit Workshop / FDP' : 'Add Workshop / FDP'}</span>
+              </h3>
+              <button onClick={() => setShowWrkModal(false)} className="p-2 text-slate-400 hover:text-white">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveWrk} className="space-y-4">
+              <div>
+                <label className="block text-xs font-semibold text-slate-300 mb-1">Event Title *</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. National Level FDP on Deep Learning Architectures"
+                  value={wrkForm.title}
+                  onChange={(e) => setWrkForm({ ...wrkForm, title: e.target.value })}
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white focus:ring-2 focus:ring-indigo-500"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-300 mb-1">Event Type *</label>
+                  <select
+                    value={wrkForm.type}
+                    onChange={(e) => setWrkForm({ ...wrkForm, type: e.target.value as any })}
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white focus:ring-2 focus:ring-indigo-500"
+                  >
+                    <option value="FDP">Faculty Development Program (FDP)</option>
+                    <option value="WORKSHOP">Workshop</option>
+                    <option value="SEMINAR">Seminar</option>
+                    <option value="STTP">Short Term Training Program (STTP)</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-300 mb-1">Role *</label>
+                  <select
+                    value={wrkForm.role}
+                    onChange={(e) => setWrkForm({ ...wrkForm, role: e.target.value as any })}
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white focus:ring-2 focus:ring-indigo-500"
+                  >
+                    <option value="ATTENDED">Attended</option>
+                    <option value="ORGANIZED">Organized / Convenor</option>
+                    <option value="RESOURCE_PERSON">Resource Person / Speaker</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-300 mb-1">Venue / Institution *</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. Department of CE, Mumbai University"
+                  value={wrkForm.venue}
+                  onChange={(e) => setWrkForm({ ...wrkForm, venue: e.target.value })}
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white focus:ring-2 focus:ring-indigo-500"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-300 mb-1">Start Date *</label>
+                  <input
+                    type="date"
+                    required
+                    value={wrkForm.startDate}
+                    onChange={(e) => setWrkForm({ ...wrkForm, startDate: e.target.value })}
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white focus:ring-2 focus:ring-indigo-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-300 mb-1">End Date (Optional)</label>
+                  <input
+                    type="date"
+                    value={wrkForm.endDate}
+                    onChange={(e) => setWrkForm({ ...wrkForm, endDate: e.target.value })}
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white focus:ring-2 focus:ring-indigo-500"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-300 mb-1">Certificate PDF Link (Optional)</label>
+                <input
+                  type="url"
+                  placeholder="https://example.com/certificate.pdf"
+                  value={wrkForm.certificateUrl}
+                  onChange={(e) => setWrkForm({ ...wrkForm, certificateUrl: e.target.value })}
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white focus:ring-2 focus:ring-indigo-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-300 mb-1">Description (Optional)</label>
+                <textarea
+                  rows={2}
+                  placeholder="Key topics learned or delivered..."
+                  value={wrkForm.description}
+                  onChange={(e) => setWrkForm({ ...wrkForm, description: e.target.value })}
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white focus:ring-2 focus:ring-indigo-500"
+                />
+              </div>
+
+              <div className="pt-2 flex justify-end space-x-3 border-t border-slate-800">
+                <button
+                  type="button"
+                  onClick={() => setShowWrkModal(false)}
+                  className="px-4 py-2.5 rounded-xl bg-slate-800 text-slate-300 text-xs font-semibold hover:bg-slate-700"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={savingWrk}
+                  className="px-5 py-2.5 rounded-xl bg-indigo-600 text-white text-xs font-bold hover:bg-indigo-500 shadow-md shadow-indigo-950 disabled:opacity-50"
+                >
+                  {savingWrk ? 'Saving...' : 'Save Workshop'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Certificate Modal */}
+      {showCertModal && (
+        <div className="fixed inset-0 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4 z-50">
+          <div className="w-full max-w-lg bg-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-8 space-y-6 shadow-2xl overflow-y-auto max-h-[90vh]">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-4">
+              <h3 className="text-lg font-bold text-white flex items-center space-x-2">
+                <Award className="w-5 h-5 text-amber-400" />
+                <span>{certForm.id ? 'Edit Certificate' : 'Add Certificate'}</span>
+              </h3>
+              <button onClick={() => setShowCertModal(false)} className="p-2 text-slate-400 hover:text-white">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveCert} className="space-y-4">
+              <div>
+                <label className="block text-xs font-semibold text-slate-300 mb-1">Certificate / Credential Title *</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. AWS Certified Solutions Architect"
+                  value={certForm.title}
+                  onChange={(e) => setCertForm({ ...certForm, title: e.target.value })}
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white focus:ring-2 focus:ring-amber-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-300 mb-1">Issuing Organization *</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. Amazon Web Services / NPTEL / Coursera"
+                  value={certForm.issuingOrganization}
+                  onChange={(e) => setCertForm({ ...certForm, issuingOrganization: e.target.value })}
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white focus:ring-2 focus:ring-amber-500"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-300 mb-1">Issue Date *</label>
+                  <input
+                    type="date"
+                    required
+                    value={certForm.issueDate}
+                    onChange={(e) => setCertForm({ ...certForm, issueDate: e.target.value })}
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white focus:ring-2 focus:ring-amber-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-300 mb-1">Credential ID (Optional)</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. AWS-839210"
+                    value={certForm.credentialId}
+                    onChange={(e) => setCertForm({ ...certForm, credentialId: e.target.value })}
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white focus:ring-2 focus:ring-amber-500"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-300 mb-1">Credential Verification URL (Optional)</label>
+                <input
+                  type="url"
+                  placeholder="https://coursera.org/verify/..."
+                  value={certForm.credentialUrl}
+                  onChange={(e) => setCertForm({ ...certForm, credentialUrl: e.target.value })}
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white focus:ring-2 focus:ring-amber-500"
+                />
+              </div>
+
+              <div className="pt-2 flex justify-end space-x-3 border-t border-slate-800">
+                <button
+                  type="button"
+                  onClick={() => setShowCertModal(false)}
+                  className="px-4 py-2.5 rounded-xl bg-slate-800 text-slate-300 text-xs font-semibold hover:bg-slate-700"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={savingCert}
+                  className="px-5 py-2.5 rounded-xl bg-amber-600 text-white text-xs font-bold hover:bg-amber-500 shadow-md shadow-amber-950 disabled:opacity-50"
+                >
+                  {savingCert ? 'Saving...' : 'Save Certificate'}
                 </button>
               </div>
             </form>

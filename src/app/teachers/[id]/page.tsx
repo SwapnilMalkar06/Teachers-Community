@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Building, BookOpen, GraduationCap, FileText, Presentation, FileQuestion, Mail, Phone, ExternalLink, ArrowLeft, RefreshCw } from 'lucide-react';
+import { Building, BookOpen, GraduationCap, FileText, Presentation, FileQuestion, Mail, Phone, ExternalLink, ArrowLeft, RefreshCw, FileBadge } from 'lucide-react';
 
 interface TeacherDetail {
   id: string;
@@ -43,7 +43,9 @@ interface TeacherDetail {
     authors: string;
     journalOrConference: string;
     year: number;
+    category?: string;
     pdfUrl?: string;
+    publisher?: string;
   }>;
   education?: Array<{
     id: string;
@@ -197,6 +199,18 @@ export default function TeacherProfileViewPage() {
           </button>
 
           <button
+            onClick={() => setActiveTab('PUBLICATIONS')}
+            className={`px-5 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center space-x-2 ${
+              activeTab === 'PUBLICATIONS'
+                ? 'bg-sky-600 text-white shadow-md'
+                : 'text-slate-400 hover:text-white hover:bg-slate-800'
+            }`}
+          >
+            <FileBadge className="w-4 h-4" />
+            <span>Research Publications ({teacher.publications?.length || 0})</span>
+          </button>
+
+          <button
             onClick={() => setActiveTab('ABOUT')}
             className={`px-5 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center space-x-2 ${
               activeTab === 'ABOUT'
@@ -256,6 +270,55 @@ export default function TeacherProfileViewPage() {
             ) : (
               <div className="bg-slate-900 border border-slate-800 rounded-3xl p-12 text-center text-slate-400">
                 No teaching resources published by this teacher yet.
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Publications Tab */}
+        {activeTab === 'PUBLICATIONS' && (
+          <div className="space-y-6">
+            {teacher.publications && teacher.publications.length > 0 ? (
+              <div className="space-y-4">
+                {teacher.publications.map((pub) => (
+                  <div key={pub.id} className="bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-3 hover:border-sky-500/40 transition-all shadow-lg flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div className="space-y-1.5 flex-1">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className={`px-2.5 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider ${
+                          pub.category === 'JOURNAL_PUBLICATION' ? 'bg-sky-500/10 text-sky-400 border border-sky-500/20' :
+                          pub.category === 'CONFERENCE_PAPER' ? 'bg-indigo-500/10 text-indigo-400 border border-indigo-500/20' :
+                          'bg-amber-500/10 text-amber-400 border border-amber-500/20'
+                        }`}>
+                          {pub.category === 'JOURNAL_PUBLICATION' ? 'Journal' : pub.category === 'CONFERENCE_PAPER' ? 'Conference' : 'PhD Thesis'}
+                        </span>
+                        <span className="text-[11px] font-bold text-slate-400">{pub.year}</span>
+                      </div>
+
+                      <h3 className="text-base font-extrabold text-white">{pub.title}</h3>
+                      <p className="text-xs text-sky-300 font-medium">Authors: {pub.authors}</p>
+                      <p className="text-xs text-slate-400">{pub.journalOrConference}</p>
+                    </div>
+
+                    {pub.pdfUrl && (
+                      <div className="shrink-0">
+                        <a
+                          href={pub.pdfUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-sky-600 text-slate-200 hover:text-white font-bold text-xs transition-all flex items-center space-x-2 border border-slate-700"
+                        >
+                          <FileText className="w-4 h-4" />
+                          <span>View PDF</span>
+                          <ExternalLink className="w-3.5 h-3.5" />
+                        </a>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="bg-slate-900 border border-slate-800 rounded-3xl p-12 text-center text-slate-400">
+                No research publications listed for this teacher yet.
               </div>
             )}
           </div>
