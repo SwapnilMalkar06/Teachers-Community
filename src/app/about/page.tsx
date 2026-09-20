@@ -10,7 +10,12 @@ export const dynamic = 'force-dynamic';
 export default async function AboutPage() {
   let profileRecord = null;
   try {
-    profileRecord = await prisma.teacherProfile.findFirst();
+    profileRecord = await prisma.teacherProfile.findFirst({
+      include: {
+        education: { orderBy: { createdAt: 'desc' } },
+        experience: { orderBy: { createdAt: 'desc' } },
+      },
+    });
   } catch (err) {
     console.error("Database connection warning during build/render:", err);
   }
@@ -30,8 +35,8 @@ export default async function AboutPage() {
     contactPhone: '+91 98765 43210',
   };
 
-  // 2. Education Data
-  const educationList = [
+  // 2. Education Data (Dynamic with static fallback)
+  const defaultEducation = [
     {
       id: 'edu-1',
       degree: 'Ph.D. in Computer Engineering (Pursuing)',
@@ -55,8 +60,18 @@ export default async function AboutPage() {
     },
   ];
 
-  // 3. Experience Data
-  const experienceList = [
+  const educationList = (profileRecord?.education && profileRecord.education.length > 0)
+    ? profileRecord.education.map(e => ({
+        id: e.id,
+        degree: e.degree,
+        institution: e.institution,
+        year: e.year,
+        description: e.description || '',
+      }))
+    : defaultEducation;
+
+  // 3. Experience Data (Dynamic with static fallback)
+  const defaultExperience = [
     {
       id: 'exp-1',
       role: 'Assistant Professor',
@@ -79,6 +94,16 @@ export default async function AboutPage() {
       description: 'Conducted foundation programming labs in C/C++ and supervised first-year engineering students.',
     },
   ];
+
+  const experienceList = (profileRecord?.experience && profileRecord.experience.length > 0)
+    ? profileRecord.experience.map(x => ({
+        id: x.id,
+        role: x.role,
+        organization: x.organization,
+        period: x.period,
+        description: x.description || '',
+      }))
+    : defaultExperience;
 
   // 4. Skills & Domains
   const expertiseCategories = [

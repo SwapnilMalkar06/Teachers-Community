@@ -2,8 +2,24 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { UserCheck, BookOpen, Plus, Trash2, Edit, Save, LogOut, FileText, RefreshCw, CheckCircle, AlertCircle, PenTool, Eye, Clock, Upload } from 'lucide-react';
+import { UserCheck, BookOpen, Plus, Trash2, Edit, Save, LogOut, FileText, RefreshCw, CheckCircle, AlertCircle, PenTool, Eye, Clock, Upload, GraduationCap, Briefcase, Award, X } from 'lucide-react';
 import BlogRichEditor, { compressImageFile } from '@/components/blog/BlogRichEditor';
+
+export interface EducationData {
+  id: string;
+  degree: string;
+  institution: string;
+  year: string;
+  description?: string | null;
+}
+
+export interface ExperienceData {
+  id: string;
+  role: string;
+  organization: string;
+  period: string;
+  description?: string | null;
+}
 
 interface TeacherProfileData {
   id: string;
@@ -27,6 +43,8 @@ interface TeacherProfileData {
     uploadedAt: string;
     subject: { name: string; code: string };
   }>;
+  education?: EducationData[];
+  experience?: ExperienceData[];
 }
 
 interface BlogPostData {
@@ -48,7 +66,17 @@ export default function TeacherDashboardPage() {
   const [profile, setProfile] = useState<TeacherProfileData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'RESOURCES' | 'BLOGS' | 'PROFILE'>('BLOGS');
+  const [activeTab, setActiveTab] = useState<'RESOURCES' | 'BLOGS' | 'PROFILE' | 'ACADEMIC_TIMELINES'>('BLOGS');
+
+  // Education state
+  const [showEduModal, setShowEduModal] = useState(false);
+  const [savingEdu, setSavingEdu] = useState(false);
+  const [eduForm, setEduForm] = useState({ id: '', degree: '', institution: '', year: '', description: '' });
+
+  // Experience state
+  const [showExpModal, setShowExpModal] = useState(false);
+  const [savingExp, setSavingExp] = useState(false);
+  const [expForm, setExpForm] = useState({ id: '', role: '', organization: '', period: '', description: '' });
 
   // Teacher Blogs state
   const [blogs, setBlogs] = useState<BlogPostData[]>([]);
@@ -91,6 +119,116 @@ export default function TeacherDashboardPage() {
     fileType: 'pdf',
   });
   const [uploadingResource, setUploadingResource] = useState(false);
+
+  const openCreateEduModal = () => {
+    setEduForm({ id: '', degree: '', institution: '', year: '', description: '' });
+    setShowEduModal(true);
+  };
+
+  const openEditEduModal = (item: EducationData) => {
+    setEduForm({
+      id: item.id,
+      degree: item.degree,
+      institution: item.institution,
+      year: item.year,
+      description: item.description || '',
+    });
+    setShowEduModal(true);
+  };
+
+  const handleSaveEdu = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSavingEdu(true);
+    try {
+      const method = eduForm.id ? 'PUT' : 'POST';
+      const res = await fetch('/api/teacher/education', {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(eduForm),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setShowEduModal(false);
+        fetchTeacherProfile();
+      } else {
+        alert(data.error || 'Failed to save education entry');
+      }
+    } catch (err) {
+      alert('Error saving education entry');
+    } finally {
+      setSavingEdu(false);
+    }
+  };
+
+  const handleDeleteEdu = async (id: string, degree: string) => {
+    if (!confirm(`Are you sure you want to delete education entry "${degree}"?`)) return;
+    try {
+      const res = await fetch(`/api/teacher/education?id=${id}`, { method: 'DELETE' });
+      const data = await res.json();
+      if (data.success) {
+        fetchTeacherProfile();
+      } else {
+        alert(data.error || 'Failed to delete education entry');
+      }
+    } catch (err) {
+      alert('Error deleting education entry');
+    }
+  };
+
+  const openCreateExpModal = () => {
+    setExpForm({ id: '', role: '', organization: '', period: '', description: '' });
+    setShowExpModal(true);
+  };
+
+  const openEditExpModal = (item: ExperienceData) => {
+    setExpForm({
+      id: item.id,
+      role: item.role,
+      organization: item.organization,
+      period: item.period,
+      description: item.description || '',
+    });
+    setShowExpModal(true);
+  };
+
+  const handleSaveExp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSavingExp(true);
+    try {
+      const method = expForm.id ? 'PUT' : 'POST';
+      const res = await fetch('/api/teacher/experience', {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(expForm),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setShowExpModal(false);
+        fetchTeacherProfile();
+      } else {
+        alert(data.error || 'Failed to save experience entry');
+      }
+    } catch (err) {
+      alert('Error saving experience entry');
+    } finally {
+      setSavingExp(false);
+    }
+  };
+
+  const handleDeleteExp = async (id: string, role: string) => {
+    if (!confirm(`Are you sure you want to delete work experience entry "${role}"?`)) return;
+    try {
+      const res = await fetch(`/api/teacher/experience?id=${id}`, { method: 'DELETE' });
+      const data = await res.json();
+      if (data.success) {
+        fetchTeacherProfile();
+      } else {
+        alert(data.error || 'Failed to delete experience entry');
+      }
+    } catch (err) {
+      alert('Error deleting experience entry');
+    }
+  };
 
   useEffect(() => {
     fetchTeacherProfile();
@@ -423,6 +561,18 @@ export default function TeacherDashboardPage() {
             <UserCheck className="w-4 h-4" />
             <span>Edit Profile & Expertise</span>
           </button>
+
+          <button
+            onClick={() => setActiveTab('ACADEMIC_TIMELINES')}
+            className={`px-5 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center space-x-2 ${
+              activeTab === 'ACADEMIC_TIMELINES'
+                ? 'bg-sky-600 text-white shadow-md'
+                : 'text-slate-400 hover:text-white hover:bg-slate-800'
+            }`}
+          >
+            <GraduationCap className="w-4 h-4" />
+            <span>Education & Work Experience ({profile.education?.length || 0} / {profile.experience?.length || 0})</span>
+          </button>
         </div>
 
         {/* Tab 1: MY BLOGS & ARTICLES */}
@@ -737,6 +887,143 @@ export default function TeacherDashboardPage() {
           </div>
         )}
 
+        {/* Tab 4: ACADEMIC TIMELINES (EDUCATION & WORK EXPERIENCE) */}
+        {activeTab === 'ACADEMIC_TIMELINES' && (
+          <div className="space-y-10">
+            {/* Education Section */}
+            <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-8 space-y-6 shadow-xl">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-slate-800 pb-4">
+                <div>
+                  <h2 className="text-xl font-bold text-white flex items-center gap-2">
+                    <GraduationCap className="w-5 h-5 text-sky-400" />
+                    <span>Education Qualifications</span>
+                  </h2>
+                  <p className="text-xs text-slate-400">
+                    Manage your degrees, university qualifications, and specialized academic achievements.
+                  </p>
+                </div>
+
+                <button
+                  onClick={openCreateEduModal}
+                  className="inline-flex items-center space-x-2 px-4 py-2.5 rounded-xl bg-sky-600 hover:bg-sky-500 text-white font-bold text-xs transition-all shadow-md shadow-sky-950 self-start sm:self-auto"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>Add Education Degree</span>
+                </button>
+              </div>
+
+              {profile.education && profile.education.length > 0 ? (
+                <div className="space-y-4">
+                  {profile.education.map((item) => (
+                    <div key={item.id} className="bg-slate-950 border border-slate-800 rounded-2xl p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:border-sky-500/40 transition-all">
+                      <div className="space-y-1.5 flex-1">
+                        <div className="flex items-center space-x-2">
+                          <span className="px-2.5 py-0.5 rounded-md bg-sky-500/10 text-sky-400 border border-sky-500/20 text-[11px] font-bold">
+                            {item.year}
+                          </span>
+                        </div>
+                        <h3 className="text-base font-extrabold text-white">{item.degree}</h3>
+                        <p className="text-xs font-semibold text-slate-300">{item.institution}</p>
+                        {item.description && (
+                          <p className="text-xs text-slate-400 pt-1 leading-relaxed">{item.description}</p>
+                        )}
+                      </div>
+
+                      <div className="flex items-center space-x-2 shrink-0">
+                        <button
+                          onClick={() => openEditEduModal(item)}
+                          className="p-2 rounded-xl bg-slate-900 border border-slate-800 text-sky-400 hover:text-white hover:bg-sky-600 transition-colors"
+                          title="Edit Education"
+                        >
+                          <Edit className="w-4 h-4" />
+                        </button>
+
+                        <button
+                          onClick={() => handleDeleteEdu(item.id, item.degree)}
+                          className="p-2 rounded-xl bg-slate-900 border border-slate-800 text-rose-400 hover:text-white hover:bg-rose-600 transition-colors"
+                          title="Delete Education"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="p-8 text-center bg-slate-950 rounded-2xl border border-slate-800/80 text-slate-400 text-xs">
+                  No education qualifications added yet. Click &quot;Add Education Degree&quot; to populate your academic degrees.
+                </div>
+              )}
+            </div>
+
+            {/* Work Experience Section */}
+            <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-8 space-y-6 shadow-xl">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-slate-800 pb-4">
+                <div>
+                  <h2 className="text-xl font-bold text-white flex items-center gap-2">
+                    <Briefcase className="w-5 h-5 text-amber-400" />
+                    <span>Work & Career Experience</span>
+                  </h2>
+                  <p className="text-xs text-slate-400">
+                    Manage your academic appointments, teaching positions, and institution history.
+                  </p>
+                </div>
+
+                <button
+                  onClick={openCreateExpModal}
+                  className="inline-flex items-center space-x-2 px-4 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-500 text-white font-bold text-xs transition-all shadow-md shadow-amber-950 self-start sm:self-auto"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>Add Experience Entry</span>
+                </button>
+              </div>
+
+              {profile.experience && profile.experience.length > 0 ? (
+                <div className="space-y-4">
+                  {profile.experience.map((item) => (
+                    <div key={item.id} className="bg-slate-950 border border-slate-800 rounded-2xl p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:border-amber-500/40 transition-all">
+                      <div className="space-y-1.5 flex-1">
+                        <div className="flex items-center space-x-2">
+                          <span className="px-2.5 py-0.5 rounded-md bg-amber-500/10 text-amber-400 border border-amber-500/20 text-[11px] font-bold">
+                            {item.period}
+                          </span>
+                        </div>
+                        <h3 className="text-base font-extrabold text-white">{item.role}</h3>
+                        <p className="text-xs font-semibold text-slate-300">{item.organization}</p>
+                        {item.description && (
+                          <p className="text-xs text-slate-400 pt-1 leading-relaxed">{item.description}</p>
+                        )}
+                      </div>
+
+                      <div className="flex items-center space-x-2 shrink-0">
+                        <button
+                          onClick={() => openEditExpModal(item)}
+                          className="p-2 rounded-xl bg-slate-900 border border-slate-800 text-amber-400 hover:text-white hover:bg-amber-600 transition-colors"
+                          title="Edit Experience"
+                        >
+                          <Edit className="w-4 h-4" />
+                        </button>
+
+                        <button
+                          onClick={() => handleDeleteExp(item.id, item.role)}
+                          className="p-2 rounded-xl bg-slate-900 border border-slate-800 text-rose-400 hover:text-white hover:bg-rose-600 transition-colors"
+                          title="Delete Experience"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="p-8 text-center bg-slate-950 rounded-2xl border border-slate-800/80 text-slate-400 text-xs">
+                  No work experience entries added yet. Click &quot;Add Experience Entry&quot; to populate your career timeline.
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
       </div>
 
       {/* Perfectly Sized & Responsive Write / Edit Blog Modal with Header & Footer Sticky Bar */}
@@ -973,6 +1260,172 @@ export default function TeacherDashboardPage() {
                   className="px-5 py-2.5 rounded-xl bg-sky-600 text-white text-xs font-bold hover:bg-sky-500 shadow-md shadow-sky-900/30 disabled:opacity-50"
                 >
                   {uploadingResource ? 'Uploading...' : 'Publish Resource'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Education Modal */}
+      {showEduModal && (
+        <div className="fixed inset-0 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4 z-50">
+          <div className="w-full max-w-lg bg-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-8 space-y-6 shadow-2xl">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-4">
+              <h3 className="text-lg font-bold text-white flex items-center space-x-2">
+                <GraduationCap className="w-5 h-5 text-sky-400" />
+                <span>{eduForm.id ? 'Edit Education Degree' : 'Add Education Degree'}</span>
+              </h3>
+              <button onClick={() => setShowEduModal(false)} className="p-2 text-slate-400 hover:text-white">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveEdu} className="space-y-4">
+              <div>
+                <label className="block text-xs font-semibold text-slate-300 mb-1">Degree / Qualification Title *</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. Ph.D. in Computer Engineering"
+                  value={eduForm.degree}
+                  onChange={(e) => setEduForm({ ...eduForm, degree: e.target.value })}
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white focus:ring-2 focus:ring-sky-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-300 mb-1">University / Institution *</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. University of Mumbai"
+                  value={eduForm.institution}
+                  onChange={(e) => setEduForm({ ...eduForm, institution: e.target.value })}
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white focus:ring-2 focus:ring-sky-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-300 mb-1">Year / Period *</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. 2021 – Present or 2013 – 2015"
+                  value={eduForm.year}
+                  onChange={(e) => setEduForm({ ...eduForm, year: e.target.value })}
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white focus:ring-2 focus:ring-sky-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-300 mb-1">Description / Specialization (Optional)</label>
+                <textarea
+                  rows={3}
+                  placeholder="Focus area, thesis topic, or academic honors..."
+                  value={eduForm.description}
+                  onChange={(e) => setEduForm({ ...eduForm, description: e.target.value })}
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white focus:ring-2 focus:ring-sky-500"
+                />
+              </div>
+
+              <div className="pt-2 flex justify-end space-x-3 border-t border-slate-800">
+                <button
+                  type="button"
+                  onClick={() => setShowEduModal(false)}
+                  className="px-4 py-2.5 rounded-xl bg-slate-800 text-slate-300 text-xs font-semibold hover:bg-slate-700"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={savingEdu}
+                  className="px-5 py-2.5 rounded-xl bg-sky-600 text-white text-xs font-bold hover:bg-sky-500 shadow-md shadow-sky-900/30 disabled:opacity-50"
+                >
+                  {savingEdu ? 'Saving...' : 'Save Education Entry'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Work Experience Modal */}
+      {showExpModal && (
+        <div className="fixed inset-0 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4 z-50">
+          <div className="w-full max-w-lg bg-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-8 space-y-6 shadow-2xl">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-4">
+              <h3 className="text-lg font-bold text-white flex items-center space-x-2">
+                <Briefcase className="w-5 h-5 text-amber-400" />
+                <span>{expForm.id ? 'Edit Work Experience' : 'Add Work Experience'}</span>
+              </h3>
+              <button onClick={() => setShowExpModal(false)} className="p-2 text-slate-400 hover:text-white">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveExp} className="space-y-4">
+              <div>
+                <label className="block text-xs font-semibold text-slate-300 mb-1">Designation / Role *</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. Assistant Professor"
+                  value={expForm.role}
+                  onChange={(e) => setExpForm({ ...expForm, role: e.target.value })}
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white focus:ring-2 focus:ring-sky-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-300 mb-1">Organization / Department *</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. Department of Computer Engineering"
+                  value={expForm.organization}
+                  onChange={(e) => setExpForm({ ...expForm, organization: e.target.value })}
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white focus:ring-2 focus:ring-sky-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-300 mb-1">Period / Duration *</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. 2017 – Present (7+ Years)"
+                  value={expForm.period}
+                  onChange={(e) => setExpForm({ ...expForm, period: e.target.value })}
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white focus:ring-2 focus:ring-sky-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-300 mb-1">Role Description / Responsibilities (Optional)</label>
+                <textarea
+                  rows={3}
+                  placeholder="Key responsibilities, courses taught, committee roles..."
+                  value={expForm.description}
+                  onChange={(e) => setExpForm({ ...expForm, description: e.target.value })}
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white focus:ring-2 focus:ring-sky-500"
+                />
+              </div>
+
+              <div className="pt-2 flex justify-end space-x-3 border-t border-slate-800">
+                <button
+                  type="button"
+                  onClick={() => setShowExpModal(false)}
+                  className="px-4 py-2.5 rounded-xl bg-slate-800 text-slate-300 text-xs font-semibold hover:bg-slate-700"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={savingExp}
+                  className="px-5 py-2.5 rounded-xl bg-amber-600 text-white text-xs font-bold hover:bg-amber-500 shadow-md shadow-amber-900/30 disabled:opacity-50"
+                >
+                  {savingExp ? 'Saving...' : 'Save Experience Entry'}
                 </button>
               </div>
             </form>

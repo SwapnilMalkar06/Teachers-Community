@@ -19,6 +19,8 @@ export async function GET() {
         publications: true,
         workshops: true,
         certificates: true,
+        education: { orderBy: { createdAt: 'desc' } },
+        experience: { orderBy: { createdAt: 'desc' } },
       },
     });
 

@@ -38,6 +38,8 @@ export async function GET(request: NextRequest) {
     const teachers = await prisma.teacherProfile.findMany({
       where,
       include: {
+        education: { orderBy: { createdAt: 'desc' } },
+        experience: { orderBy: { createdAt: 'desc' } },
         _count: {
           select: {
             subjects: true,

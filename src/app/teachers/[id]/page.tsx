@@ -45,6 +45,20 @@ interface TeacherDetail {
     year: number;
     pdfUrl?: string;
   }>;
+  education?: Array<{
+    id: string;
+    degree: string;
+    institution: string;
+    year: string;
+    description?: string | null;
+  }>;
+  experience?: Array<{
+    id: string;
+    role: string;
+    organization: string;
+    period: string;
+    description?: string | null;
+  }>;
 }
 
 export default function TeacherProfileViewPage() {
@@ -273,6 +287,50 @@ export default function TeacherProfileViewPage() {
                 <div className="font-bold text-white">{teacher.officeAddress || 'Main Department Block'}</div>
               </div>
             </div>
+
+            {/* Education Timeline */}
+            {teacher.education && teacher.education.length > 0 && (
+              <div className="pt-4 border-t border-slate-800 space-y-3">
+                <h3 className="text-sm font-bold text-white flex items-center space-x-2">
+                  <GraduationCap className="w-4 h-4 text-sky-400" />
+                  <span>Education Qualifications</span>
+                </h3>
+                <div className="space-y-3">
+                  {teacher.education.map((edu) => (
+                    <div key={edu.id} className="bg-slate-950 border border-slate-800/80 rounded-2xl p-4 space-y-1 text-xs">
+                      <div className="flex items-center justify-between">
+                        <span className="font-bold text-white">{edu.degree}</span>
+                        <span className="px-2 py-0.5 rounded bg-sky-500/10 text-sky-400 text-[10px] font-bold">{edu.year}</span>
+                      </div>
+                      <div className="text-slate-400 font-medium">{edu.institution}</div>
+                      {edu.description && <div className="text-slate-500 text-[11px] pt-1">{edu.description}</div>}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Work Experience Timeline */}
+            {teacher.experience && teacher.experience.length > 0 && (
+              <div className="pt-4 border-t border-slate-800 space-y-3">
+                <h3 className="text-sm font-bold text-white flex items-center space-x-2">
+                  <Building className="w-4 h-4 text-amber-400" />
+                  <span>Work & Career Experience</span>
+                </h3>
+                <div className="space-y-3">
+                  {teacher.experience.map((exp) => (
+                    <div key={exp.id} className="bg-slate-950 border border-slate-800/80 rounded-2xl p-4 space-y-1 text-xs">
+                      <div className="flex items-center justify-between">
+                        <span className="font-bold text-white">{exp.role}</span>
+                        <span className="px-2 py-0.5 rounded bg-amber-500/10 text-amber-400 text-[10px] font-bold">{exp.period}</span>
+                      </div>
+                      <div className="text-slate-400 font-medium">{exp.organization}</div>
+                      {exp.description && <div className="text-slate-500 text-[11px] pt-1">{exp.description}</div>}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         )}
 

@@ -77,6 +77,8 @@ model TeacherProfile {
   certificates     Certificate[]
   activities       Activity[]
   blogs            BlogPost[]
+  education        Education[]
+  experience       WorkExperience[]
 }
 
 model TeacherRequest {
@@ -258,3 +260,28 @@ model ContactMessage {
   receivedAt DateTime @default(now())
   isRead     Boolean  @default(false)
 }
+
+model Education {
+  id          String         @id @default(uuid())
+  teacherId   String
+  teacher     TeacherProfile @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+  degree      String
+  institution String
+  year        String
+  description String?        @db.Text
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+}
+
+model WorkExperience {
+  id           String         @id @default(uuid())
+  teacherId    String
+  teacher      TeacherProfile @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+  role         String
+  organization String
+  period       String
+  description  String?        @db.Text
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+}
+
