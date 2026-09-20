@@ -190,15 +190,48 @@ export default function TeacherDashboardPage() {
 
   // New Resource Form state
   const [showAddResource, setShowAddResource] = useState(false);
+  const [uploadingNativeFile, setUploadingNativeFile] = useState(false);
   const [newResource, setNewResource] = useState({
     title: '',
     description: '',
     resourceType: 'NOTES' as 'NOTES' | 'PPT' | 'QUESTION_BANK',
     subjectId: '',
-    fileUrl: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf',
+    fileUrl: '',
     fileType: 'pdf',
   });
   const [uploadingResource, setUploadingResource] = useState(false);
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploadingNativeFile(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const res = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData,
+      });
+
+      const data = await res.json();
+      if (data.success && data.fileUrl) {
+        setNewResource((prev) => ({
+          ...prev,
+          fileUrl: data.fileUrl,
+          fileType: data.fileType || 'pdf',
+        }));
+      } else {
+        alert(data.error || 'File upload failed');
+      }
+    } catch (err) {
+      console.error('File upload error:', err);
+      alert('Failed to upload file');
+    } finally {
+      setUploadingNativeFile(false);
+    }
+  };
 
   const openCreateEduModal = () => {
     setEduForm({ id: '', degree: '', institution: '', year: '', description: '' });
@@ -1806,14 +1839,27 @@ export default function TeacherDashboardPage() {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">File Download URL *</label>
+                <label className="block text-xs font-semibold text-slate-300 mb-1">Select & Upload Local File (PDF / PPT) *</label>
                 <input
-                  type="url"
+                  type="file"
+                  accept=".pdf,.ppt,.pptx,.doc,.docx"
+                  onChange={handleFileUpload}
+                  className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-xs font-medium text-slate-300 file:mr-4 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-sky-600 file:text-white hover:file:bg-sky-500 cursor-pointer"
+                />
+                {uploadingNativeFile && (
+                  <p className="text-[11px] text-sky-400 mt-1.5 font-semibold animate-pulse">Uploading binary file to server...</p>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-300 mb-1">File URL (Auto-filled or External Link) *</label>
+                <input
+                  type="text"
                   required
-                  placeholder="https://example.com/file.pdf"
+                  placeholder="/uploads/file.pdf or https://example.com/file.pdf"
                   value={newResource.fileUrl}
                   onChange={(e) => setNewResource({ ...newResource, fileUrl: e.target.value })}
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs font-medium text-white focus:ring-2 focus:ring-sky-500"
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs font-medium text-white focus:ring-2 focus:ring-sky-500 font-mono"
                 />
               </div>
 
