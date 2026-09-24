@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { verifyUserRole } from '@/lib/auth';
-import { generate6DigitOTP, sendSMSOTP } from '@/lib/sms';
 
 export const dynamic = 'force-dynamic';
 
@@ -35,11 +34,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: true, message: 'Teacher request declined.' });
     }
 
-    // Generate 6-Digit OTP valid for 15 minutes
-    const otp = generate6DigitOTP();
-    const otpExpiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 mins
+    // Default password assigned upon admin approval
     const phone = reqItem.phone || '+91 98765 43210';
-    const tempPassword = `TEMP_${otp}`;
+    const defaultPassword = 'teacher123';
 
     let userRecord: any = await prisma.user.findUnique({
       where: { email: reqItem.email },
@@ -52,11 +49,9 @@ export async function POST(request: NextRequest) {
           name: reqItem.name,
           email: reqItem.email,
           phone: phone,
-          password: tempPassword,
+          password: defaultPassword,
           role: 'TEACHER',
-          otp: otp,
-          otpExpiresAt: otpExpiresAt,
-          isFirstLogin: true,
+          isFirstLogin: false,
           teacherProfile: {
             create: {
               fullName: reqItem.name,
@@ -79,33 +74,25 @@ export async function POST(request: NextRequest) {
         where: { email: reqItem.email },
         data: {
           phone: phone,
-          otp: otp,
-          otpExpiresAt: otpExpiresAt,
-          isFirstLogin: true,
+          isFirstLogin: false,
         },
         include: { teacherProfile: true },
       });
     }
 
-    // Update Request status & OTP
+    // Update Request status
     await prisma.teacherRequest.update({
       where: { id: requestId },
       data: {
         status: 'APPROVED',
-        otp: otp,
-        otpExpiresAt: otpExpiresAt,
       },
     });
 
-    // Trigger Automatic SMS Dispatch
-    const smsResult = await sendSMSOTP(phone, reqItem.name, otp);
-
     return NextResponse.json({
       success: true,
-      message: `Teacher request approved! Automatic SMS OTP (${otp}) dispatched to ${phone}. The teacher can now complete first-time OTP verification & set password.`,
-      otp: otp,
+      message: `Teacher request approved! Teacher can now log in directly using email: ${reqItem.email} and default password: ${defaultPassword}`,
       phone: phone,
-      smsProvider: smsResult.provider,
+      defaultPassword: defaultPassword,
       user: userRecord,
     });
   } catch (error) {

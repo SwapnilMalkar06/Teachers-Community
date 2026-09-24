@@ -36,7 +36,7 @@ export default function TeacherJoinRequestPage() {
       const data = await res.json();
 
       if (data.success) {
-        setSuccess('Your teacher profile creation request has been submitted to the Admin! Once approved, an SMS OTP will be dispatched to your mobile number for first-time password setup.');
+        setSuccess('Your teacher profile creation request has been submitted to the Admin! Once approved, your account will be activated for login.');
         setForm({
           name: '',
           email: '',
@@ -78,7 +78,7 @@ export default function TeacherJoinRequestPage() {
               Request Teacher Account
             </h1>
             <p className="text-xs text-slate-400">
-              Submit your university faculty details to the platform Admin. Upon approval, an automatic 6-digit SMS OTP will be dispatched to set your password.
+              Submit your university faculty details to the platform Admin. Upon approval, your teacher account will be activated for login.
             </p>
           </div>
 
@@ -129,7 +129,7 @@ export default function TeacherJoinRequestPage() {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">Mobile Phone (For SMS OTP) *</label>
+                <label className="block text-xs font-semibold text-slate-300 mb-1">Mobile Phone *</label>
                 <div className="relative">
                   <Phone className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
                   <input

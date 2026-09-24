@@ -2210,33 +2210,18 @@ export default function TeacherDashboardPage() {
                 />
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1">Event Type *</label>
-                  <select
-                    value={wrkForm.type}
-                    onChange={(e) => setWrkForm({ ...wrkForm, type: e.target.value as any })}
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white focus:ring-2 focus:ring-indigo-500"
-                  >
-                    <option value="FDP">Faculty Development Program (FDP)</option>
-                    <option value="WORKSHOP">Workshop</option>
-                    <option value="SEMINAR">Seminar</option>
-                    <option value="STTP">Short Term Training Program (STTP)</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1">Role *</label>
-                  <select
-                    value={wrkForm.role}
-                    onChange={(e) => setWrkForm({ ...wrkForm, role: e.target.value as any })}
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white focus:ring-2 focus:ring-indigo-500"
-                  >
-                    <option value="ATTENDED">Attended</option>
-                    <option value="ORGANIZED">Organized / Convenor</option>
-                    <option value="RESOURCE_PERSON">Resource Person / Speaker</option>
-                  </select>
-                </div>
+              <div>
+                <label className="block text-xs font-semibold text-slate-300 mb-1">Event Type *</label>
+                <select
+                  value={wrkForm.type}
+                  onChange={(e) => setWrkForm({ ...wrkForm, type: e.target.value as any })}
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white focus:ring-2 focus:ring-indigo-500"
+                >
+                  <option value="FDP">Faculty Development Program (FDP)</option>
+                  <option value="WORKSHOP">Workshop</option>
+                  <option value="SEMINAR">Seminar</option>
+                  <option value="STTP">Short Term Training Program (STTP)</option>
+                </select>
               </div>
 
               <div>

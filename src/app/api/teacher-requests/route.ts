@@ -4,7 +4,7 @@ import { verifyUserRole } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
 
-// Submit Teacher Profile Request (with Phone number for SMS OTP)
+// Submit Teacher Profile Request
 export async function POST(request: NextRequest) {
   try {
     const { name, email, phone, university, department, designation, expertise, note } = await request.json();
@@ -36,7 +36,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      message: 'Teacher profile request submitted successfully! Admin will review and send SMS OTP upon approval.',
+      message: 'Teacher profile request submitted successfully! Admin will review and activate your account upon approval.',
       request: teacherRequest,
     });
   } catch (error) {

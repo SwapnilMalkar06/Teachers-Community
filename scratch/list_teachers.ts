@@ -34,7 +34,7 @@ async function main() {
   const requests = await prisma.teacherRequest.findMany();
   console.log(`Total Teacher Join Requests: ${requests.length}`);
   requests.forEach((r, i) => {
-    console.log(`Request ${i + 1}: ${r.name} (${r.email}) - Status: ${r.status}, OTP: ${r.otp || 'N/A'}, Phone: ${r.phone}`);
+    console.log(`Request ${i + 1}: ${r.name} (${r.email}) - Status: ${r.status}, Phone: ${r.phone}`);
   });
 }
 
